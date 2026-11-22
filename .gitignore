@@ -1,0 +1,11 @@
+node_modules/
+dist/
+data/
+*.db
+*.db-journal
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/decision-payload.json
+
+# real stock-report extracts used by the tests; kept on this machine only
+server/test/fixtures/

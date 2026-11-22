@@ -1,0 +1,750 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-23T00:02:02+07:00",
+  "title": "Design System: yok สมุดงาน",
+  "extensions": {
+    "colorMeta": {
+      "page": {
+        "role": "neutral",
+        "displayName": "Ledger Grey",
+        "tonalRamp": [
+          "#1f2626",
+          "#3b4545",
+          "#5a6666",
+          "#7d8a8a",
+          "#a9b6b6",
+          "#c9d3d3",
+          "#dde4e4",
+          "#eaefef"
+        ],
+        "canonical": "oklch(94.8% 0.005 197)"
+      },
+      "seam-page": {
+        "role": "neutral",
+        "displayName": "Page Seam",
+        "tonalRamp": [
+          "#1f2626",
+          "#3b4545",
+          "#5a6666",
+          "#7d8a8a",
+          "#a9b6b6",
+          "#c9d3d3",
+          "#dde4e4",
+          "#eaefef"
+        ],
+        "canonical": "oklch(85.9% 0.011 197)"
+      },
+      "on-page-mute": {
+        "role": "neutral",
+        "displayName": "Page Mute",
+        "tonalRamp": [
+          "#1d1416",
+          "#2c2224",
+          "#493f41",
+          "#574d50",
+          "#6f6568",
+          "#aea1a4",
+          "#d2c5c8",
+          "#f8eaed"
+        ]
+      },
+      "wash": {
+        "role": "neutral",
+        "displayName": "Leaf Wash",
+        "tonalRamp": [
+          "#1f2626",
+          "#3b4545",
+          "#5a6666",
+          "#7d8a8a",
+          "#a9b6b6",
+          "#c9d3d3",
+          "#dde4e4",
+          "#eaefef"
+        ]
+      },
+      "wash-deep": {
+        "role": "neutral",
+        "displayName": "Deep Wash",
+        "tonalRamp": [
+          "#1f2626",
+          "#3b4545",
+          "#5a6666",
+          "#7d8a8a",
+          "#a9b6b6",
+          "#c9d3d3",
+          "#dde4e4",
+          "#eaefef"
+        ]
+      },
+      "leaf": {
+        "role": "neutral",
+        "displayName": "Leaf White",
+        "tonalRamp": [
+          "#1f2626",
+          "#3b4545",
+          "#5a6666",
+          "#7d8a8a",
+          "#a9b6b6",
+          "#c9d3d3",
+          "#e2e8e8",
+          "#fbfcfc"
+        ],
+        "canonical": "oklch(99.0% 0.001 197)"
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "White",
+        "tonalRamp": [
+          "#1f2626",
+          "#3b4545",
+          "#5a6666",
+          "#7d8a8a",
+          "#a9b6b6",
+          "#c9d3d3",
+          "#e2e8e8",
+          "#ffffff"
+        ]
+      },
+      "seam": {
+        "role": "neutral",
+        "displayName": "Seam",
+        "tonalRamp": [
+          "#1f2626",
+          "#3b4545",
+          "#5a6666",
+          "#7d8a8a",
+          "#a9b6b6",
+          "#c9d3d3",
+          "#dde4e4",
+          "#eaefef"
+        ],
+        "canonical": "oklch(85.9% 0.011 197)"
+      },
+      "seam-soft": {
+        "role": "neutral",
+        "displayName": "Soft Seam",
+        "tonalRamp": [
+          "#1f2626",
+          "#3b4545",
+          "#5a6666",
+          "#7d8a8a",
+          "#a9b6b6",
+          "#c9d3d3",
+          "#e2e8e8",
+          "#fbfcfc"
+        ]
+      },
+      "cover": {
+        "role": "primary",
+        "displayName": "Passbook Blue",
+        "tonalRamp": [
+          "#0b2238",
+          "#003f6e",
+          "#004a82",
+          "#005a9c",
+          "#3b7fbb",
+          "#7eaad4",
+          "#b9d3ea",
+          "#f2f7fc"
+        ],
+        "canonical": "oklch(46.0% 0.129 250)"
+      },
+      "cover-deep": {
+        "role": "primary",
+        "displayName": "Blue Ink",
+        "tonalRamp": [
+          "#0b2238",
+          "#003f6e",
+          "#004a82",
+          "#005a9c",
+          "#3b7fbb",
+          "#7eaad4",
+          "#b9d3ea",
+          "#f2f7fc"
+        ],
+        "canonical": "oklch(46.0% 0.129 250)"
+      },
+      "cover-2": {
+        "role": "primary",
+        "displayName": "Cover Lift",
+        "tonalRamp": [
+          "#0b2238",
+          "#003f6e",
+          "#004a82",
+          "#005a9c",
+          "#3b7fbb",
+          "#7eaad4",
+          "#b9d3ea",
+          "#f2f7fc"
+        ]
+      },
+      "cover-3": {
+        "role": "primary",
+        "displayName": "Cover Night",
+        "tonalRamp": [
+          "#0b2238",
+          "#003f6e",
+          "#004a82",
+          "#005a9c",
+          "#3b7fbb",
+          "#7eaad4",
+          "#b9d3ea",
+          "#f2f7fc"
+        ]
+      },
+      "cover-ink": {
+        "role": "primary",
+        "displayName": "Cover Paper",
+        "tonalRamp": [
+          "#0b2238",
+          "#003f6e",
+          "#004a82",
+          "#005a9c",
+          "#3b7fbb",
+          "#7eaad4",
+          "#b9d3ea",
+          "#f2f7fc"
+        ]
+      },
+      "cover-mute": {
+        "role": "primary",
+        "displayName": "Cover Mist",
+        "tonalRamp": [
+          "#0b2238",
+          "#003f6e",
+          "#004a82",
+          "#005a9c",
+          "#3b7fbb",
+          "#7eaad4",
+          "#b9d3ea",
+          "#f2f7fc"
+        ],
+        "canonical": "oklch(85.5% 0.043 245)"
+      },
+      "gold": {
+        "role": "secondary",
+        "displayName": "Thai Gold",
+        "tonalRamp": [
+          "#391f00",
+          "#5d3b00",
+          "#7a5c00",
+          "#a87b00",
+          "#c5a029",
+          "#ffcc00",
+          "#ffedb1",
+          "#fff6d1"
+        ],
+        "canonical": "oklch(86.5% 0.177 90)"
+      },
+      "gold-soft": {
+        "role": "secondary",
+        "displayName": "Gold Wash",
+        "tonalRamp": [
+          "#391f00",
+          "#5d3b00",
+          "#7a5c00",
+          "#a87b00",
+          "#c5a029",
+          "#ffcc00",
+          "#ffedb1",
+          "#fff6d1"
+        ]
+      },
+      "gold-deep": {
+        "role": "secondary",
+        "displayName": "Gold Ink",
+        "tonalRamp": [
+          "#391f00",
+          "#5d3b00",
+          "#7a5c00",
+          "#a87b00",
+          "#c5a029",
+          "#ffcc00",
+          "#ffedb1",
+          "#fff6d1"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "#1d1416",
+          "#2c2224",
+          "#493f41",
+          "#574d50",
+          "#6f6568",
+          "#aea1a4",
+          "#d2c5c8",
+          "#f8eaed"
+        ],
+        "canonical": "oklch(20.4% 0.015 4)"
+      },
+      "mute": {
+        "role": "neutral",
+        "displayName": "Mute",
+        "tonalRamp": [
+          "#1d1416",
+          "#2c2224",
+          "#493f41",
+          "#574d50",
+          "#6f6568",
+          "#aea1a4",
+          "#d2c5c8",
+          "#f8eaed"
+        ]
+      },
+      "faint": {
+        "role": "neutral",
+        "displayName": "Faint",
+        "tonalRamp": [
+          "#1d1416",
+          "#2c2224",
+          "#493f41",
+          "#574d50",
+          "#6f6568",
+          "#aea1a4",
+          "#d2c5c8",
+          "#f8eaed"
+        ]
+      },
+      "used": {
+        "role": "neutral",
+        "displayName": "Used-Phone Wash",
+        "tonalRamp": [
+          "#14304a",
+          "#2c4d6c",
+          "#4a6d8e",
+          "#6d8fb0",
+          "#93b2cf",
+          "#b9d3ea",
+          "#dbe8f4",
+          "#eef4fa"
+        ],
+        "canonical": "oklch(92.5% 0.021 246)"
+      },
+      "ok": {
+        "role": "semantic",
+        "displayName": "Ledger Green",
+        "tonalRamp": [
+          "#0a2d17",
+          "#23633a",
+          "#376f49",
+          "#589169",
+          "#83b28f",
+          "#aed4b7",
+          "#daf7e1",
+          "#e1f0e5"
+        ]
+      },
+      "ok-soft": {
+        "role": "semantic",
+        "displayName": "Mint",
+        "tonalRamp": [
+          "#0a2d17",
+          "#23633a",
+          "#376f49",
+          "#589169",
+          "#83b28f",
+          "#aed4b7",
+          "#daf7e1",
+          "#e1f0e5"
+        ]
+      },
+      "warn": {
+        "role": "semantic",
+        "displayName": "Amber Ink",
+        "tonalRamp": [
+          "#371f00",
+          "#5b3a07",
+          "#7d4f00",
+          "#a5783f",
+          "#c49d6f",
+          "#e3c39e",
+          "#ffeace",
+          "#fff6d1"
+        ]
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "Seal Red",
+        "tonalRamp": [
+          "#4d000c",
+          "#791521",
+          "#a3122a",
+          "#d15257",
+          "#ed8081",
+          "#ffadab",
+          "#ffdad8",
+          "#fbe7ea"
+        ]
+      },
+      "danger-soft": {
+        "role": "semantic",
+        "displayName": "Blush",
+        "tonalRamp": [
+          "#4d000c",
+          "#791521",
+          "#a3122a",
+          "#d15257",
+          "#ed8081",
+          "#ffadab",
+          "#ffdad8",
+          "#fbe7ea"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page titles only, in Blue Ink, always followed by a date stamp."
+      },
+      "display-sm": {
+        "displayName": "Display Small",
+        "purpose": "Page titles below 640px."
+      },
+      "headline-lg": {
+        "displayName": "Headline Large",
+        "purpose": "The single heading inside an empty state or the file drop zone; the print report title."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "สมุดงาน on the rail beside the seal, in Cover Paper."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section heads and day-group heads beside their stamp."
+      },
+      "stamp": {
+        "displayName": "Stamp",
+        "purpose": "Dates inside ink stamps on page titles and day groups."
+      },
+      "stamp-sm": {
+        "displayName": "Stamp Small",
+        "purpose": "Dates on in-progress task rows."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Work card titles; muted when done."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All reading text and every table cell; tabular figures on."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "Buttons, segments, nav items, table headers, total rows."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "The four reconciliation figures in the strip, nowhere else."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Form labels in mute; nav counts."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "Chip text, sub-counts, strip labels, source-row tables."
+      },
+      "badge": {
+        "displayName": "Badge",
+        "purpose": "Status pills, priority and condition tags, confirm-delete."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "Tags, durations, file meta lines, the rail date."
+      },
+      "badge-sm": {
+        "displayName": "Badge Small",
+        "purpose": "The +N price-variance badge and the condition tag in the phone stock list."
+      },
+      "print-body": {
+        "displayName": "Print Body",
+        "purpose": "The whole printed report on A4 landscape."
+      }
+    },
+    "shadows": [
+      {
+        "name": "leaf-rest",
+        "value": "0 1px 2px rgb(29 20 22 / 0.06), 0 6px 18px -10px rgb(0 90 156 / 0.18)",
+        "purpose": "Every leaf. The only resting shadow in the system."
+      },
+      {
+        "name": "pressed-key",
+        "value": "0 1px 0 rgb(0 40 70 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.14)",
+        "purpose": "Primary button edge."
+      },
+      {
+        "name": "field-focus",
+        "value": "0 0 0 3px rgb(0 90 156 / 0.18)",
+        "purpose": "Halo with a Blue Ink border on focused inputs."
+      },
+      {
+        "name": "in-hand-ring",
+        "value": "0 0 0 3px #ffcc00",
+        "purpose": "The selected import; the card being composed or edited."
+      },
+      {
+        "name": "toast",
+        "value": "0 12px 30px -12px rgb(0 40 70 / 0.6)",
+        "purpose": "Blue toasts at bottom right."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Easing for the print sweep, stamp thunk and rise."
+      },
+      {
+        "name": "print-sweep",
+        "value": "520ms ease-out-expo; gold rgb(255 204 0 / 0.6) wash grows left to right (background-size 0% to 100%)",
+        "purpose": "A new entry being printed into the book: fresh import rows (first 24) and a newly saved work card."
+      },
+      {
+        "name": "print-stagger",
+        "value": "delay = row * 55ms + column * 40ms",
+        "purpose": "Each cell continues the sweep where its neighbour ended; rows cascade downward."
+      },
+      {
+        "name": "print-fade",
+        "value": "2200ms ease-out after a 900ms hold (plus stagger); gold alpha 0.6 to 0 via the registered --ink property",
+        "purpose": "The ink settles after printing. The fresh flag clears after 4500ms."
+      },
+      {
+        "name": "stamp-thunk",
+        "value": "420ms ease-out-expo; rotate(-9deg) scale(1.35), then rotate(-1deg) scale(0.96) at 60%, then rotate(-2deg) scale(1)",
+        "purpose": "A date stamp landing when the date it shows changes."
+      },
+      {
+        "name": "rise",
+        "value": "360ms ease-out-expo; translateY(6px) to 0",
+        "purpose": "Toasts and the compose form entering."
+      },
+      {
+        "name": "state",
+        "value": "150ms",
+        "purpose": "Button, chip and field colour/border transitions; buttons press down 1px on active."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animations and transitions collapse to 1ms with no delay",
+        "purpose": "prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "2xl",
+        "value": "1536px"
+      },
+      {
+        "name": "3xl",
+        "value": "1760px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Solid Passbook Blue action with Cover Paper text, one per action group (จดงานใหม่, Export Excel, บันทึกการ์ด).",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg>จดงานใหม่</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 16px; border-radius: 8px; font-family: 'Anuphan', 'Leelawadee UI', 'Tahoma', sans-serif; font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: background-color 150ms, color 150ms, border-color 150ms, box-shadow 150ms, transform 150ms; border: none; background: var(--color-cover, #005a9c); color: var(--color-cover-ink, #f2f7fc); box-shadow: 0 1px 0 rgb(0 40 70 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.14); } .ds-btn-primary:hover { background: var(--color-cover-2, #004a82); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-cover-deep, #005a9c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary file and filter actions (นำเข้าไฟล์, CSV, PDF, ล้างตัวกรอง): Blue Ink on Leaf White.",
+      "html": "<button class=\"ds-btn-outline\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"17 8 12 3 7 8\"/><line x1=\"12\" x2=\"12\" y1=\"3\" y2=\"15\"/></svg>นำเข้าไฟล์</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 16px; border-radius: 8px; font-family: 'Anuphan', 'Leelawadee UI', 'Tahoma', sans-serif; font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: background-color 150ms, color 150ms, border-color 150ms, box-shadow 150ms, transform 150ms; background: var(--color-leaf, #fbfcfc); color: var(--color-cover-deep, #005a9c); border: 1px solid rgb(0 90 156 / 0.4); } .ds-btn-outline:hover { border-color: var(--color-cover-deep, #005a9c); background: rgb(0 90 156 / 0.1); } .ds-btn-outline:active { transform: translateY(1px); } .ds-btn-outline:focus-visible { outline: 2px solid var(--color-cover-deep, #005a9c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Isolated Delete",
+      "kind": "button",
+      "refersTo": "button-delete",
+      "description": "Outline trash icon set apart by a seam divider; the first press becomes a solid ยืนยันลบ that holds focus (shown beside it).",
+      "html": "<span class=\"ds-del-row\"><button class=\"ds-btn-ghost-sm\">แก้ไข</button><span class=\"ds-del-sep\"></span><button class=\"ds-btn-delete\" aria-label=\"ลบ\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"/><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"/></svg></button><button class=\"ds-btn-delete-confirm\">ยืนยันลบ</button></span>",
+      "css": ".ds-del-row { display: inline-flex; align-items: center; gap: 4px; font-family: 'Anuphan', 'Leelawadee UI', 'Tahoma', sans-serif; } .ds-del-sep { width: 1px; height: 20px; margin: 0 6px; background: var(--color-seam, #c9d3d3); } .ds-btn-ghost-sm { min-height: 32px; padding: 4px 8px; border: none; border-radius: 8px; background: transparent; color: var(--color-mute, #574d50); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 150ms, color 150ms; } .ds-btn-ghost-sm:hover { background: var(--color-wash-deep, #dde4e4); color: var(--color-ink, #1d1416); } .ds-btn-ghost-sm:focus-visible { outline: 2px solid var(--color-cover-deep, #005a9c); outline-offset: 2px; } .ds-btn-delete { display: inline-grid; place-items: center; min-height: 32px; padding: 4px 8px; border-radius: 8px; border: 1px solid rgb(163 18 42 / 0.35); background: transparent; color: var(--color-danger, #a3122a); cursor: pointer; transition: background-color 150ms, color 150ms, border-color 150ms; } .ds-btn-delete:hover, .ds-btn-delete:focus-visible { background: var(--color-danger, #a3122a); border-color: var(--color-danger, #a3122a); color: #fff; } .ds-btn-delete:focus-visible { outline: 2px solid var(--color-cover-deep, #005a9c); outline-offset: 2px; } .ds-btn-delete-confirm { min-height: 32px; margin-left: 8px; padding: 4px 10px; border: none; border-radius: 8px; background: var(--color-danger, #a3122a); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; } .ds-btn-delete-confirm:focus-visible { outline: 2px solid var(--color-cover-deep, #005a9c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "White writable field with a seam border; Blue Ink border and halo on focus.",
+      "html": "<label class=\"ds-search\"><span class=\"ds-search-icon\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg></span><input class=\"ds-field\" type=\"search\" placeholder=\"ค้นหารุ่น สี รหัส\"></label>",
+      "css": ".ds-search { position: relative; display: block; width: 256px; } .ds-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--color-faint, #6f6568); display: flex; pointer-events: none; } .ds-field { width: 100%; padding: 6px 12px 6px 36px; border: 1px solid var(--color-seam, #c9d3d3); border-radius: 8px; background: #fff; color: var(--color-ink, #1d1416); font-family: 'Anuphan', 'Leelawadee UI', 'Tahoma', sans-serif; font-size: 15px; caret-color: var(--color-cover-deep, #005a9c); transition: border-color 150ms, box-shadow 150ms; } .ds-field::placeholder { color: var(--color-faint, #6f6568); } .ds-field:hover { border-color: #a9b6b6; } .ds-field:focus { outline: none; border-color: var(--color-cover-deep, #005a9c); box-shadow: 0 0 0 3px rgb(0 90 156 / 0.18); }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Tag filter pill; the pressed state fills Passbook Blue.",
+      "html": "<span class=\"ds-chips\"><button class=\"ds-chip\" aria-pressed=\"true\">สต๊อก</button><button class=\"ds-chip\" aria-pressed=\"false\">สาขาโคราช</button><button class=\"ds-chip\" aria-pressed=\"false\">เอกสาร</button></span>",
+      "css": ".ds-chips { display: inline-flex; gap: 6px; } .ds-chip { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 12px; border-radius: 9999px; border: 1px solid var(--color-seam, #c9d3d3); background: #fff; color: var(--color-ink, #1d1416); font-family: 'Anuphan', 'Leelawadee UI', 'Tahoma', sans-serif; font-size: 14px; cursor: pointer; transition: border-color 150ms, background-color 150ms, color 150ms; } .ds-chip:hover { border-color: var(--color-cover-deep, #005a9c); } .ds-chip[aria-pressed='true'] { background: var(--color-cover, #005a9c); border-color: var(--color-cover, #005a9c); color: var(--color-cover-ink, #f2f7fc); font-weight: 600; } .ds-chip:focus-visible { outline: 2px solid var(--color-cover-deep, #005a9c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "custom",
+      "refersTo": "segmented",
+      "description": "Radio group on a white track; the selected option fills Passbook Blue and its count turns Cover Mist.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\" aria-label=\"ประเภท\"><button class=\"ds-seg-opt\" role=\"radio\" aria-checked=\"true\">ทั้งหมด</button><button class=\"ds-seg-opt\" role=\"radio\" aria-checked=\"false\">มือ 1 <span class=\"ds-seg-n\">868</span></button><button class=\"ds-seg-opt\" role=\"radio\" aria-checked=\"false\">มือ 2 <span class=\"ds-seg-n\">397</span></button></div>",
+      "css": ".ds-seg { display: inline-flex; padding: 2px; border: 1px solid var(--color-seam, #c9d3d3); border-radius: 8px; background: #fff; } .ds-seg-opt { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: none; border-radius: 6px; background: transparent; color: var(--color-mute, #574d50); font-family: 'Anuphan', 'Leelawadee UI', 'Tahoma', sans-serif; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; transition: background-color 150ms, color 150ms; } .ds-seg-opt:hover { background: var(--color-wash, #eaefef); color: var(--color-ink, #1d1416); } .ds-seg-opt[aria-checked='true'] { background: var(--color-cover, #005a9c); color: var(--color-cover-ink, #f2f7fc); } .ds-seg-n { font-size: 13px; color: var(--color-faint, #6f6568); } .ds-seg-opt[aria-checked='true'] .ds-seg-n { color: var(--color-cover-mute, #b9d3ea); } .ds-seg-opt:focus-visible { outline: 2px solid var(--color-cover-deep, #005a9c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Rail Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Passbook Blue rail with the gold seal; the active item is a Ledger Grey tab opening into the page, with a gold count.",
+      "html": "<nav class=\"ds-rail\"><div class=\"ds-rail-brand\"><svg width=\"40\" height=\"40\" viewBox=\"0 0 64 64\" aria-hidden=\"true\"><circle cx=\"32\" cy=\"32\" r=\"29\" fill=\"none\" stroke=\"#FFCC00\" stroke-width=\"2\"/><circle cx=\"32\" cy=\"32\" r=\"24.5\" fill=\"none\" stroke=\"#FFCC00\" stroke-width=\"0.9\" stroke-dasharray=\"1.6 2.4\"/><path d=\"M22.5 23.5h8.5v17M31 31h6.5a4.5 4.5 0 0 1 4.5 4.5V40.5M22.5 40.5H42\" fill=\"none\" stroke=\"#FFCC00\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg><span><b class=\"ds-rail-word\">สมุดงาน</b><small class=\"ds-rail-date\">22 พ.ย. 69</small></span></div><a class=\"ds-nav\" href=\"#\">การ์ดงาน<span class=\"ds-nav-n\">0</span></a><a class=\"ds-nav\" aria-current=\"page\" href=\"#\">สต๊อกสินค้า<span class=\"ds-nav-n\">1,265</span></a></nav>",
+      "css": ".ds-rail { width: 248px; padding: 24px 0 24px 12px; background: var(--color-cover, #005a9c); color: var(--color-cover-ink, #f2f7fc); font-family: 'Anuphan', 'Leelawadee UI', 'Tahoma', sans-serif; display: flex; flex-direction: column; gap: 4px; } .ds-rail-brand { display: flex; align-items: center; gap: 12px; padding: 0 12px 24px; line-height: 1.25; } .ds-rail-word { display: block; font-family: 'Noto Sans Thai Looped', 'Anuphan', 'Leelawadee UI', sans-serif; font-size: 19px; font-weight: 700; color: var(--color-cover-ink, #f2f7fc); } .ds-rail-date { font-size: 13px; color: var(--color-cover-mute, #b9d3ea); } .ds-nav { display: flex; align-items: center; gap: 12px; padding: 10px 16px 10px 20px; border-radius: 10px 0 0 10px; color: rgb(242 247 252 / 0.85); font-size: 15px; font-weight: 600; text-decoration: none; transition: background-color 150ms, color 150ms; } .ds-nav:hover { background: var(--color-cover-2, #004a82); color: var(--color-cover-ink, #f2f7fc); } .ds-nav[aria-current='page'] { background: var(--color-page, #eaefef); color: var(--color-cover-deep, #005a9c); } .ds-nav:focus-visible { outline: 2px solid var(--color-gold, #ffcc00); outline-offset: 2px; } .ds-nav-n { margin-left: auto; min-width: 28px; padding: 0 8px; border-radius: 9999px; text-align: center; font-size: 14px; font-variant-numeric: tabular-nums; background: var(--color-cover-3, #003f6e); color: var(--color-cover-mute, #b9d3ea); } .ds-nav[aria-current='page'] .ds-nav-n { background: var(--color-gold, #ffcc00); color: var(--color-ink, #1d1416); }"
+    },
+    {
+      "name": "Date Stamp",
+      "kind": "custom",
+      "refersTo": "stamp",
+      "description": "Blue Ink stamp beside every page title and day group; lands with the stamp thunk when its date changes.",
+      "html": "<div class=\"ds-stamp-row\"><h1 class=\"ds-stamp-title\">สต๊อกสินค้า</h1><span class=\"ds-stamp\">22 พ.ย. 69</span><span class=\"ds-stamp ds-stamp-sm\">20 พ.ย. 69</span></div>",
+      "css": ".ds-stamp-row { display: flex; align-items: center; gap: 16px; } .ds-stamp-title { margin: 0; font-family: 'Noto Sans Thai Looped', 'Anuphan', 'Leelawadee UI', sans-serif; font-size: 28px; font-weight: 700; line-height: 1.25; color: var(--color-cover-deep, #005a9c); } .ds-stamp { display: inline-block; font-family: 'Noto Sans Thai Looped', 'Anuphan', 'Leelawadee UI', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; color: var(--color-cover-deep, #005a9c); border: 2px solid currentColor; border-radius: 3px; padding: 1px 10px; transform: rotate(-2deg); -webkit-mask-image: linear-gradient(100deg, #000 0%, #000 70%, rgb(0 0 0 / 0.78) 100%); mask-image: linear-gradient(100deg, #000 0%, #000 70%, rgb(0 0 0 / 0.78) 100%); animation: ds-stamp-thunk 420ms cubic-bezier(0.16, 1, 0.3, 1) both; } .ds-stamp-sm { font-size: 13px; padding: 0 7px; border-width: 1.5px; } @keyframes ds-stamp-thunk { 0% { transform: rotate(-9deg) scale(1.35); } 60% { transform: rotate(-1deg) scale(0.96); } 100% { transform: rotate(-2deg) scale(1); } } @media (max-width: 639px) { .ds-stamp-title { font-size: 26px; } } @media (prefers-reduced-motion: reduce) { .ds-stamp { animation-duration: 1ms; } }"
+    },
+    {
+      "name": "Ledger Table",
+      "kind": "custom",
+      "refersTo": "table-header",
+      "description": "Passbook Blue header band, one data size with tabular figures, running balance, solid blue มือ 2 badge, 2px Blue Ink rule over the total; the first row shows the gold print sweep.",
+      "html": "<div class=\"ds-ledger\"><table><thead><tr><th>ยี่ห้อ</th><th>รุ่น</th><th>ประเภท</th><th class=\"r\">จำนวน <span class=\"ds-sort-on\">&#8595;</span></th><th class=\"r\">ราคาปลีก <span class=\"ds-sort\">&#8645;</span></th><th class=\"r\">ยอดสะสม</th></tr></thead><tbody><tr class=\"ds-printing\"><td class=\"b\">APPLE</td><td>ADAPTER USB-C</td><td><span class=\"ds-cond\">มือ 1</span></td><td class=\"r q\">85</td><td class=\"r\">790</td><td class=\"r bal\">85</td></tr><tr><td></td><td>APPLE IPAD 10 (2022) WI-FI</td><td><span class=\"ds-cond used\">มือ 2</span></td><td class=\"r q\">1</td><td class=\"r\">8,900</td><td class=\"r bal\">86</td></tr><tr><td></td><td>APPLE PENCIL รุ่น 1</td><td><span class=\"ds-cond\">มือ 1</span></td><td class=\"r q\">6</td><td class=\"r\"><span class=\"ds-var\">+1</span>2,990</td><td class=\"r bal\">92</td></tr><tr class=\"grp\"><td class=\"b\">OPPO</td><td>OPPO A6C</td><td><span class=\"ds-cond\">มือ 1</span></td><td class=\"r q\">30</td><td class=\"r\">6,999</td><td class=\"r bal\">122</td></tr></tbody></table><div class=\"ds-total\"><span>รวมทั้งหมด 4 รายการ</span><span>122 เครื่อง</span></div></div>",
+      "css": ".ds-ledger { border: 1px solid var(--color-seam, #c9d3d3); border-radius: 10px; background: var(--color-leaf, #fbfcfc); box-shadow: 0 1px 2px rgb(29 20 22 / 0.06), 0 6px 18px -10px rgb(0 90 156 / 0.18); overflow: hidden; font-family: 'Anuphan', 'Leelawadee UI', 'Tahoma', sans-serif; font-size: 15px; font-variant-numeric: tabular-nums; color: var(--color-ink, #1d1416); } .ds-ledger table { width: 100%; border-collapse: collapse; } .ds-ledger th { background: var(--color-cover, #005a9c); color: var(--color-cover-ink, #f2f7fc); font-weight: 600; text-align: left; padding: 10px 12px; white-space: nowrap; } .ds-ledger th:hover { background: var(--color-cover-2, #004a82); } .ds-sort { color: var(--color-cover-mute, #b9d3ea); opacity: 0.8; } .ds-sort-on { color: var(--color-gold, #ffcc00); } .ds-ledger td { position: relative; padding: 8px 12px; border-bottom: 1px solid var(--color-seam-soft, #e2e8e8); white-space: nowrap; } .ds-ledger tbody tr:hover td { background: var(--color-wash, #eaefef); } .ds-ledger tr.grp td { border-top: 1px solid var(--color-seam, #c9d3d3); } .ds-ledger .r { text-align: right; } .ds-ledger .b { color: var(--color-cover-deep, #005a9c); font-weight: 600; } .ds-ledger .q { font-weight: 600; } .ds-ledger .bal { color: var(--color-mute, #574d50); font-weight: 600; } .ds-cond { padding: 1px 8px; border-radius: 4px; font-size: 13px; font-weight: 600; background: var(--color-wash, #eaefef); color: var(--color-ink, #1d1416); } .ds-cond.used { background: var(--color-cover, #005a9c); color: var(--color-cover-ink, #f2f7fc); } .ds-var { margin-right: 6px; padding: 0 6px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--color-gold-soft, #fff6d1); color: var(--color-gold-deep, #7a5c00); } .ds-total { display: flex; justify-content: space-between; padding: 10px 16px; border-top: 2px solid var(--color-cover-deep, #005a9c); background: var(--color-wash, #eaefef); color: var(--color-cover-deep, #005a9c); font-weight: 700; } .ds-printing td::after { content: ''; position: absolute; inset: 0; background: rgb(255 204 0 / 0.6); transform-origin: left; pointer-events: none; animation: ds-sweep 520ms cubic-bezier(0.16, 1, 0.3, 1) both, ds-fade 2200ms ease-out 900ms both; } .ds-printing td:nth-child(2)::after { animation-delay: 40ms, 940ms; } .ds-printing td:nth-child(3)::after { animation-delay: 80ms, 980ms; } .ds-printing td:nth-child(4)::after { animation-delay: 120ms, 1020ms; } .ds-printing td:nth-child(5)::after { animation-delay: 160ms, 1060ms; } .ds-printing td:nth-child(6)::after { animation-delay: 200ms, 1100ms; } @keyframes ds-sweep { from { transform: scaleX(0); } to { transform: scaleX(1); } } @keyframes ds-fade { from { opacity: 1; } to { opacity: 0; } } @media (prefers-reduced-motion: reduce) { .ds-printing td::after { animation: none; opacity: 0; } }"
+    },
+    {
+      "name": "Reconciliation Strip",
+      "kind": "card",
+      "refersTo": "strip-cell",
+      "description": "One leaf divided by soft seams into figure cells and a verdict; never separate tiles.",
+      "html": "<section class=\"ds-strip\"><div class=\"ds-cell\"><div class=\"ds-cl\">มือ 1 ทั้งหมด</div><div class=\"ds-cv\">868</div></div><div class=\"ds-cell\"><div class=\"ds-cl\">มือ 2 ทั้งหมด</div><div class=\"ds-cv\">397</div></div><div class=\"ds-cell\"><div class=\"ds-cl\">รวมทั้งหมด</div><div class=\"ds-cv cover\">1,265</div></div><div class=\"ds-cell\"><div class=\"ds-cl\">มูลค่าตามราคาปลีก</div><div class=\"ds-cv\">฿17.22 ล้าน</div></div><div class=\"ds-verdict\"><span class=\"ds-ok\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg></span><span><b>ยอดตรงกับไฟล์ต้นฉบับ</b><small>อ่านครบ 509/509 บรรทัด · รวม 1,265 เครื่อง</small></span></div></section>",
+      "css": ".ds-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.5fr); border: 1px solid var(--color-seam, #c9d3d3); border-radius: 10px; background: var(--color-leaf, #fbfcfc); box-shadow: 0 1px 2px rgb(29 20 22 / 0.06), 0 6px 18px -10px rgb(0 90 156 / 0.18); overflow: hidden; font-family: 'Anuphan', 'Leelawadee UI', 'Tahoma', sans-serif; } .ds-cell { padding: 14px 20px; border-right: 1px solid var(--color-seam-soft, #e2e8e8); } .ds-cl { font-size: 14px; color: var(--color-mute, #574d50); } .ds-cv { font-size: 24px; font-weight: 600; line-height: 1.25; font-variant-numeric: tabular-nums; color: var(--color-ink, #1d1416); } .ds-cv.cover { color: var(--color-cover-deep, #005a9c); } .ds-verdict { display: flex; align-items: center; gap: 12px; padding: 14px 20px; } .ds-ok { display: flex; color: var(--color-ok, #23633a); } .ds-verdict b { display: block; font-weight: 600; color: var(--color-ok, #23633a); } .ds-verdict small { font-size: 14px; color: var(--color-mute, #574d50); font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Work Card",
+      "kind": "card",
+      "refersTo": "leaf",
+      "description": "A dated entry with fixed furniture: priority tag, status toggle pill, title, detail, a seam-ruled meta footer with edit and the isolated delete.",
+      "html": "<article class=\"ds-card\"><div class=\"ds-card-top\"><span class=\"ds-prio\">สำคัญสูง</span><button class=\"ds-status\" aria-pressed=\"false\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10.1 2.18a9.93 9.93 0 0 1 3.8 0\"/><path d=\"M17.6 3.71a9.95 9.95 0 0 1 2.69 2.7\"/><path d=\"M21.82 10.1a9.93 9.93 0 0 1 0 3.8\"/><path d=\"M20.29 17.6a9.95 9.95 0 0 1-2.7 2.69\"/><path d=\"M13.9 21.82a9.94 9.94 0 0 1-3.8 0\"/><path d=\"M6.4 20.29a9.95 9.95 0 0 1-2.69-2.7\"/><path d=\"M2.18 13.9a9.93 9.93 0 0 1 0-3.8\"/><path d=\"M3.71 6.4a9.95 9.95 0 0 1 2.7-2.69\"/></svg>กำลังทำ</button></div><h3>สรุปสต๊อกออฟฟิศ ส่งหัวหน้า</h3><p>นำเข้ารายงานทุกสาขา แยกมือ 1 มือ 2 แล้วส่งไฟล์ Excel ในไลน์ก่อน 5 โมงเย็น</p><div class=\"ds-card-foot\"><span>สต๊อก</span><span>45 นาที</span><span class=\"ds-card-act\"><button class=\"ds-btn-ghost-sm\">แก้ไข</button><span class=\"ds-del-sep\"></span><button class=\"ds-btn-delete\" aria-label=\"ลบ\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"/><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"/></svg></button></span></div></article>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 10px; max-width: 520px; padding: 16px; border: 1px solid var(--color-seam, #c9d3d3); border-radius: 10px; background: var(--color-leaf, #fbfcfc); box-shadow: 0 1px 2px rgb(29 20 22 / 0.06), 0 6px 18px -10px rgb(0 90 156 / 0.18); font-family: 'Anuphan', 'Leelawadee UI', 'Tahoma', sans-serif; color: var(--color-ink, #1d1416); } .ds-card-top { display: flex; justify-content: space-between; align-items: center; } .ds-prio { padding: 1px 8px; border: 1px solid var(--color-cover, #005a9c); border-radius: 6px; background: var(--color-cover, #005a9c); color: var(--color-cover-ink, #f2f7fc); font-size: 13px; font-weight: 600; } .ds-status { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 9999px; border: 1px solid rgb(125 79 0 / 0.3); background: var(--color-gold-soft, #fff6d1); color: var(--color-warn, #7d4f00); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color 150ms; } .ds-status:hover { border-color: var(--color-warn, #7d4f00); } .ds-status[aria-pressed='true'] { background: var(--color-ok-soft, #e1f0e5); color: var(--color-ok, #23633a); border-color: rgb(35 99 58 / 0.3); } .ds-status:focus-visible { outline: 2px solid var(--color-cover-deep, #005a9c); outline-offset: 2px; } .ds-card h3 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.375; } .ds-card p { margin: 0; font-size: 15px; color: var(--color-mute, #574d50); } .ds-card-foot { display: flex; align-items: center; gap: 12px; padding-top: 10px; border-top: 1px solid var(--color-seam-soft, #e2e8e8); font-size: 13px; color: var(--color-mute, #574d50); } .ds-card-act { margin-left: auto; display: flex; align-items: center; gap: 4px; } .ds-del-sep { width: 1px; height: 20px; margin: 0 6px; background: var(--color-seam, #c9d3d3); } .ds-btn-ghost-sm { min-height: 32px; padding: 4px 8px; border: none; border-radius: 8px; background: transparent; color: var(--color-mute, #574d50); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 150ms, color 150ms; } .ds-btn-ghost-sm:hover { background: var(--color-wash-deep, #dde4e4); color: var(--color-ink, #1d1416); } .ds-btn-ghost-sm:focus-visible { outline: 2px solid var(--color-cover-deep, #005a9c); outline-offset: 2px; } .ds-btn-delete { display: inline-grid; place-items: center; min-height: 32px; padding: 4px 8px; border-radius: 8px; border: 1px solid rgb(163 18 42 / 0.35); background: transparent; color: var(--color-danger, #a3122a); cursor: pointer; transition: background-color 150ms, color 150ms, border-color 150ms; } .ds-btn-delete:hover, .ds-btn-delete:focus-visible { background: var(--color-danger, #a3122a); border-color: var(--color-danger, #a3122a); color: #fff; } .ds-btn-delete:focus-visible { outline: 2px solid var(--color-cover-deep, #005a9c); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Business Passbook",
+    "overview": "The app is built as a Thai bank passbook (สมุดบัญชี) kept for one business. A deep blue cover runs down the left edge; the pages are a pale, cool grey; every piece of work and every stock import is an entry written into a white leaf and dated with a blue ink stamp. Stock carries a running balance column the way a passbook does. Trust comes from reconciliation, not decoration: a strip under the heading says whether the totals match the source file, and the same totals carry through to the screen, the printout and the Excel file.\n\nDensity is that of a desk ledger: one reading size (15px) for everything you scan, tabular numerals everywhere, hairline seams between rows and a single soft shadow under each leaf. Hierarchy comes from weight and colour, not from size jumps. Gold is rationed to the thing in your hand at this moment, so it always answers \"where am I / what did I just do\". Motion has one job: an entry being \"printed\" into the book (a gold sweep across a new row) and a date stamp landing with a small thunk.\n\nThe world rejects the default admin dashboard: no KPI tiles floating over a white table, no gradient headers, no decorative colour. Summaries are ruled lines or one divided strip; tables carry a solid blue header band.",
+    "keyCharacteristics": [
+      "60/30/10 colour: cool grey page, deep blue cover, gold for the thing in hand.",
+      "Two Thai voices: looped Noto Sans Thai Looped for titles and stamps, Anuphan for everything read or typed.",
+      "One data size (15px) with tabular figures; hierarchy by weight.",
+      "White leaves (10px corners) with 1px seams on a flat grey page.",
+      "Blue ink date stamps, tilted, on every dated heading.",
+      "The \"print\" sweep for new entries; state recolours rows in place.",
+      "Thai-first copy, Buddhist-era dates, Thai unit nouns on every count."
+    ],
+    "rules": [
+      {
+        "name": "The 60/30/10 Rule",
+        "body": "Ledger Grey about 60% of any screen, blue about 30% (the rail plus header bands, primary actions and selections), gold no more than 10%. The rule is pinned by the owner (#EAEFEF / #005A9C / #FFCC00) and holds in screen, print, Excel and the favicon alike.",
+        "section": "colors"
+      },
+      {
+        "name": "The Thing-In-Hand Rule",
+        "body": "Pure gold marks only what the user is holding right now: the active tab's count, the selected import, the card being written or edited, the sorted column's arrow, the rows that just arrived, the toast that just appeared, the file being dragged. Nothing at rest is gold except the seal, which is the book's mark. If two things on one screen are gold for different reasons, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Used-Phone Tint Rule",
+        "body": "มือ 2 is always told apart by blue before its label is read: on screen it is a solid Passbook Blue badge with Cover Paper text, while มือ 1 sits on Leaf Wash in ink; in print and Excel the whole มือ 2 row carries Used-Phone Wash.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Data Size Rule",
+        "body": "Every figure in a table, list or meta line sits at body size with tabular numerals. Quantities and brands rise by weight (600) and colour (Blue Ink), never by size. The strip's 24px figures are the single exception, because they are the verdict.",
+        "section": "typography"
+      },
+      {
+        "name": "The Two Voices Rule",
+        "body": "Noto Sans Thai Looped is for what the book prints (titles, heads, stamps, wordmark). Anything the user reads row by row or types is Anuphan.",
+        "section": "typography"
+      },
+      {
+        "name": "The Thai-First Rule",
+        "body": "All UI copy is Thai. Dates use the Buddhist era: \"22 พ.ย. 69\" on stamps and in the UI, \"22/11/69\" in export titles. Numbers use Thai thousands separators. Every count carries its Thai unit noun (เครื่อง, รายการ, รุ่น, บรรทัด, การ์ด). Latin appears only for file formats and for product data carried over from the source report.",
+        "section": "typography"
+      },
+      {
+        "name": "The Leaf-On-Page Rule",
+        "body": "There is one surface level. If something needs to stand out, it gets a gold ring or a blue fill, not a bigger shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Ink Stamp Rule",
+        "body": "Every dated heading carries a Blue Ink stamp (Buddhist era, -2deg tilt, uneven ink); it lands with the stamp thunk when its date changes.",
+        "section": "components"
+      },
+      {
+        "name": "The Header Band Rule",
+        "body": "Every ledger table header is a solid Passbook Blue band with light 600 labels, on screen, in print and in Excel; totals close with a 2px Blue Ink rule over a grey row.",
+        "section": "components"
+      },
+      {
+        "name": "The Isolated Delete Rule",
+        "body": "Delete is an outline icon set apart by a seam divider; the first press becomes a solid ยืนยันลบ that holds focus, and blur reverts it. No modal.",
+        "section": "components"
+      },
+      {
+        "name": "The Print Rule",
+        "body": "New entries arrive as a gold sweep left to right across the row, then the ink fades; state changes recolour rows in place without moving the grid.",
+        "section": "components"
+      },
+      {
+        "name": "The No-Tiles Rule",
+        "body": "Summaries are one divided strip or one ruled line, never a row of separate KPI tiles.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do keep the 60/30/10 split: Ledger Grey page (#EAEFEF), Passbook Blue cover, header bands and selections (#005A9C), gold (#FFCC00) under 10%.",
+      "Do use Passbook Blue (cover) for fills with Cover Paper text, and Blue Ink (cover-deep) for blue text and lines on light grounds, even while they share a value.",
+      "Do reserve pure gold for the thing in hand: the active count, the selected import, the card being written, the sorted column, rows that just arrived; on blue, the seal, the active sort arrow, the toast icon and the rail focus ring.",
+      "Do date every dated heading with a Blue Ink stamp, Buddhist era, tilted -2deg.",
+      "Do set every table, list and meta figure at 15px with tabular numerals and build hierarchy with weight (600) and Blue Ink, not size.",
+      "Do give every ledger table the solid blue header band and close totals with a 2px Blue Ink rule over a grey row, on screen, in print and in Excel.",
+      "Do mark มือ 2 in blue everywhere: the solid badge on screen, the Used-Phone Wash row in print and Excel.",
+      "Do make delete an outline icon set apart by a seam divider, confirmed in place by a solid red ยืนยันลบ that holds focus.",
+      "Do announce new entries with the print sweep and recolour state changes in place without moving the grid.",
+      "Do write every label in Thai, with Thai unit nouns on counts and Buddhist-era dates.",
+      "Do put content on 10px Leaf White leaves with a 1px seam and the single leaf shadow."
+    ],
+    "donts": [
+      "Don't build summaries as KPI tiles; use the divided strip or a ruled balance line.",
+      "Don't use gold as a button fill, heading colour, background or decoration.",
+      "Don't raise a number's size to make it important; the strip figures are the only 24px numerals.",
+      "Don't add elevation levels or hover lifts to leaves; stand things out with a gold ring or blue fill.",
+      "Don't confirm deletes with a modal, or place the delete button flush against edit without a divider.",
+      "Don't set body text, data or form input in Noto Sans Thai Looped; it is for titles, heads and stamps.",
+      "Don't write Gregorian dates or untranslated English labels in the UI.",
+      "Don't extend Gold Wash to new persistent states; it belongs to rows and targets being acted on."
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "yok-workdesk",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "à¹€à¸§à¹‡à¸šà¸Šà¹ˆà¸§à¸¢à¸‡à¸²à¸™à¸ªà¹ˆà¸§à¸™à¸•à¸±à¸§: à¸à¸²à¸£à¹Œà¸”à¸‡à¸²à¸™ + à¸™à¸³à¹€à¸‚à¹‰à¸²/à¸ªà¹ˆà¸‡à¸­à¸­à¸à¸ªà¸•à¹Šà¸­à¸à¸ªà¸´à¸™à¸„à¹‰à¸²",
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c magenta,yellow \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "node --watch --disable-warning=ExperimentalWarning server/index.js",
+    "dev:web": "vite",
+    "build": "vite build",
+    "start": "vite build && node --disable-warning=ExperimentalWarning server/index.js",
+    "test": "node --disable-warning=ExperimentalWarning --test \"server/test/*.test.js\""
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "@fontsource/anuphan": "^5.3.0",
+    "@fontsource/noto-sans-thai-looped": "^5.3.0",
+    "exceljs": "^4.4.0",
+    "express": "^5.3.0",
+    "lucide-react": "^1.77.0",
+    "multer": "^2.5.0",
+    "pdfjs-dist": "^6.5.438",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.6",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@vitejs/plugin-react": "^6.3.0",
+    "concurrently": "^10.0.7",
+    "tailwindcss": "^4.3.5",
+    "vite": "^8.3.8"
+  }
+}
