@@ -15,7 +15,14 @@ export function reportTitle(date = new Date()) {
   return `สต๊อกสินค้าออฟฟิศ ${thaiDate(date)}`;
 }
 
-const NOTE = 'หมายเหตุ: รวมจำนวนตามยี่ห้อ รุ่น ความจุ ประเภท และสี จากรายงานสต๊อกต้นฉบับ ราคาที่แสดงคือราคาของเครื่องส่วนใหญ่ในกลุ่ม';
+const NOTE = 'หมายเหตุ: รวมจำนวนตามรหัสสินค้าและสี จากรายงานสต๊อกต้นฉบับ ราคาที่แสดงคือราคาของเครื่องส่วนใหญ่ในกลุ่ม';
+
+/** Shown instead of a wholesale price when the source has none. */
+export const NO_WHOLESALE = 'ขายส่งตามEIMI';
+export const ACCESSORY_TITLE = 'สายชาร์จ / อะแดปเตอร์';
+
+const HEADERS = ['ยี่ห้อ', 'รหัสสินค้า', 'รุ่นสินค้า', 'ความจุ', 'ประเภท', 'สี', 'จำนวน', 'ราคาขายปลีก', 'ราคาขายส่ง', 'หมายเหตุ'];
+const QTY_COL = 7;
 
 function priceNote(d) {
   const parts = [];
@@ -33,22 +40,27 @@ const csvCell = (v) => {
 const money = (n) => (n == null ? '' : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
 export function toCsv(summary, date = new Date()) {
-  const { detail, totals } = summary;
-  const W = 9;
+  const { detail, accessories, totals } = summary;
+  const W = HEADERS.length;
   const pad = (cells) => [...cells, ...Array(Math.max(0, W - cells.length)).fill('')];
+  const line = (d) => [
+    d.brand, d.sku, d.model, d.capacity, CONDITION_TH[d.condition], d.color, d.qty,
+    money(d.retail), d.wholesale == null ? NO_WHOLESALE : money(d.wholesale), priceNote(d),
+  ];
+  const total = (label, qty) => pad([label, '', '', '', '', '', qty]);
   const out = [
     pad([reportTitle(date)]),
     pad([]),
     pad(['มือ 1 ทั้งหมด', totals.newQty, 'มือ 2 ทั้งหมด', totals.usedQty, 'รวมทั้งหมด', totals.qty]),
     pad([]),
-    ['ยี่ห้อ', 'รุ่นสินค้า', 'ความจุ', 'ประเภท', 'สี', 'จำนวน', 'ราคาขายปลีก', 'ราคาขายส่ง', 'หมายเหตุ'],
-    ...detail.map((d) => [
-      d.brand, d.model, d.capacity, CONDITION_TH[d.condition], d.color, d.qty, money(d.retail), money(d.wholesale), priceNote(d),
-    ]),
-    pad(['รวมทั้งหมด', '', '', '', '', totals.qty]),
-    pad([]),
-    pad([NOTE]),
+    HEADERS,
+    ...detail.map(line),
+    total('รวมเครื่อง', totals.deviceQty),
   ];
+  if (accessories.length) {
+    out.push(pad([]), pad([ACCESSORY_TITLE]), HEADERS, ...accessories.map(line), total('รวมสายชาร์จ/อะแดปเตอร์', totals.accessoryQty));
+  }
+  out.push(pad([]), pad([NOTE]));
   return '﻿' + out.map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }
 
@@ -119,39 +131,56 @@ function pageSetup(ws, headerRow, landscape) {
 }
 
 export async function toXlsx(summary, date = new Date()) {
-  const { detail, models, totals } = summary;
+  const { detail, accessories, models, totals } = summary;
   const wb = new ExcelJS.Workbook();
   wb.creator = 'yok สมุดงาน';
   wb.created = date;
 
-  // Sheet 1: full detail, the layout the user asked for.
+  // Sheet 1: full detail, the layout the user asked for; accessories in their own table after the devices.
   const ws = wb.addWorksheet('สต๊อกสินค้า', { properties: { tabColor: { argb: C.cover } } });
+  const span = HEADERS.length;
   ws.columns = [
-    { width: 12 }, { width: 30 }, { width: 13 }, { width: 9 }, { width: 18 },
-    { width: 9 }, { width: 14 }, { width: 14 }, { width: 38 },
+    { width: 12 }, { width: 16 }, { width: 30 }, { width: 13 }, { width: 9 }, { width: 18 },
+    { width: 9 }, { width: 14 }, { width: 16 }, { width: 36 },
   ];
-  styleTitle(ws, reportTitle(date), 9);
+  styleTitle(ws, reportTitle(date), span);
   styleTotals(ws, 3, totals);
-  const h = ws.getRow(5);
-  h.values = ['ยี่ห้อ', 'รุ่นสินค้า', 'ความจุ', 'ประเภท', 'สี', 'จำนวน', 'ราคาขายปลีก', 'ราคาขายส่ง', 'หมายเหตุ'];
-  styleHeader(h);
-  let r = 6;
-  for (const d of detail) {
-    const row = ws.getRow(r++);
-    row.values = [d.brand, d.model, d.capacity, CONDITION_TH[d.condition], d.color, d.qty, d.retail, d.wholesale, priceNote(d)];
-    styleBody(row, [6, 7, 8], d.condition === 'used' ? C.usedTint : null);
-    row.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' };
-    row.getCell(7).numFmt = '#,##0.00';
-    row.getCell(8).numFmt = '#,##0.00';
-    row.getCell(9).font = { name: FONT, size: 10, color: { argb: 'FF6B6264' } };
+
+  const writeTable = (startRow, items, totalLabel, totalQty) => {
+    const h = ws.getRow(startRow);
+    h.values = HEADERS;
+    styleHeader(h);
+    let r = startRow + 1;
+    for (const d of items) {
+      const row = ws.getRow(r++);
+      row.values = [
+        d.brand, d.sku, d.model, d.capacity, CONDITION_TH[d.condition], d.color, d.qty,
+        d.retail, d.wholesale == null ? NO_WHOLESALE : d.wholesale, priceNote(d),
+      ];
+      styleBody(row, [7, 8, 9], d.condition === 'used' ? C.usedTint : null);
+      row.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
+      row.getCell(8).numFmt = '#,##0.00';
+      row.getCell(9).numFmt = '#,##0.00';
+      row.getCell(10).font = { name: FONT, size: 10, color: { argb: 'FF6B6264' } };
+    }
+    const g = ws.getRow(r);
+    g.values = [totalLabel, '', '', '', '', '', totalQty];
+    styleGrand(g, span);
+    g.getCell(QTY_COL).alignment = { horizontal: 'right' };
+    return r;
+  };
+
+  let r = writeTable(5, detail, 'รวมเครื่อง', totals.deviceQty);
+  ws.autoFilter = { from: { row: 5, column: 1 }, to: { row: r - 1, column: span } };
+  if (accessories.length) {
+    r += 2;
+    const t = ws.getCell(r, 1);
+    t.value = ACCESSORY_TITLE;
+    t.font = { name: FONT, size: 13, bold: true, color: { argb: C.deep } };
+    r = writeTable(r + 1, accessories, 'รวมสายชาร์จ/อะแดปเตอร์', totals.accessoryQty);
   }
-  const g = ws.getRow(r);
-  g.values = ['รวมทั้งหมด', '', '', '', '', totals.qty];
-  styleGrand(g, 9);
-  g.getCell(6).alignment = { horizontal: 'right' };
   ws.getCell(r + 2, 1).value = NOTE;
   ws.getCell(r + 2, 1).font = { name: FONT, size: 10, italic: true, color: { argb: 'FF6B6264' } };
-  ws.autoFilter = { from: { row: 5, column: 1 }, to: { row: r - 1, column: 9 } };
   pageSetup(ws, 5, true);
 
   // Sheet 2: per model, exactly like the office sheet.

@@ -38,13 +38,26 @@ export function filterRows(rows, { condition, brand, q } = {}) {
   );
 }
 
+/** สายชาร์จ/อะแดปเตอร์ and similar go to their own table after the devices. */
+export function isAccessory(category) {
+  return /สายชาร์จ|อะแดปเตอร์|adapter|cable/i.test(category || '');
+}
+
 export function summarize(rows) {
   const groups = new Map();
   for (const r of rows) {
-    const key = [r.brand, r.model.toUpperCase(), r.capacity.toUpperCase(), r.condition, r.color.toLowerCase()].join('\u0001');
+    // The product code (รหัสสินค้า) is the identity; names are not trusted to match.
+    // One code can hold several colours, so colour stays part of the key.
+    const key = r.sku
+      ? ['sku', r.sku.toUpperCase(), r.color.toLowerCase()].join('\u0001')
+      : ['name', r.brand, r.model.toUpperCase(), r.capacity.toUpperCase(), r.condition, r.color.toLowerCase()].join('\u0001');
     let g = groups.get(key);
     if (!g) {
       g = {
+        key,
+        sku: r.sku,
+        category: r.category,
+        accessory: isAccessory(r.category),
         brand: r.brand,
         model: r.model,
         capacity: r.capacity,
@@ -63,8 +76,12 @@ export function summarize(rows) {
     if (r.wholesale) g.wholesaleW.set(r.wholesale, (g.wholesaleW.get(r.wholesale) || 0) + r.qty);
   }
 
-  const detail = [...groups.values()]
+  const items = [...groups.values()]
     .map((g) => ({
+      key: g.key,
+      sku: g.sku,
+      category: g.category,
+      accessory: g.accessory,
       brand: g.brand,
       model: g.model,
       capacity: g.capacity,
@@ -84,12 +101,15 @@ export function summarize(rows) {
         capacityRank(a.capacity) - capacityRank(b.capacity) ||
         cmp(a.capacity, b.capacity) ||
         (a.condition === b.condition ? 0 : a.condition === 'new' ? -1 : 1) ||
-        cmp(a.color, b.color),
+        cmp(a.color, b.color) ||
+        cmp(a.sku, b.sku),
     );
+  const detail = items.filter((d) => !d.accessory);
+  const accessories = items.filter((d) => d.accessory);
 
   // Per brand + model, like the office sheet (มือ 1 / มือ 2 / รวม).
   const byModel = new Map();
-  for (const d of detail) {
+  for (const d of items) {
     const key = `${d.brand}\u0001${d.model.toUpperCase()}`;
     const m = byModel.get(key) || { brand: d.brand, model: d.model, newQty: 0, usedQty: 0, qty: 0 };
     if (d.condition === 'new') m.newQty += d.qty;
@@ -99,14 +119,21 @@ export function summarize(rows) {
   }
   const models = [...byModel.values()].sort((a, b) => cmp(a.brand, b.brand) || cmp(a.model, b.model));
 
-  const totals = { newQty: 0, usedQty: 0, qty: 0, retailValue: 0, lines: detail.length, models: models.length };
-  for (const d of detail) {
+  const totals = {
+    newQty: 0, usedQty: 0, qty: 0, retailValue: 0,
+    deviceQty: 0, accessoryQty: 0,
+    lines: items.length, deviceLines: detail.length, accessoryLines: accessories.length,
+    models: models.length,
+  };
+  for (const d of items) {
     if (d.condition === 'new') totals.newQty += d.qty;
     else totals.usedQty += d.qty;
     totals.qty += d.qty;
+    if (d.accessory) totals.accessoryQty += d.qty;
+    else totals.deviceQty += d.qty;
   }
   for (const r of rows) totals.retailValue += (r.retail || 0) * r.qty;
 
   const brands = [...new Set(rows.map((r) => r.brand))].sort(cmp);
-  return { detail, models, totals, brands };
+  return { detail, accessories, models, totals, brands };
 }

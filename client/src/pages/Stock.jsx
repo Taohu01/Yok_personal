@@ -124,6 +124,7 @@ function FormatGuide() {
 // ------------------------------------------------------------------ tables
 const COLS = [
   { key: 'brand', label: 'ยี่ห้อ' },
+  { key: 'sku', label: 'รหัสสินค้า' },
   { key: 'model', label: 'รุ่น' },
   { key: 'capacity', label: 'ความจุ' },
   { key: 'condition', label: 'ประเภท' },
@@ -133,6 +134,8 @@ const COLS = [
   { key: 'wholesale', label: 'ราคาส่ง', num: true },
 ];
 const collator = new Intl.Collator('th', { numeric: true });
+const NO_WHOLESALE = 'ขายส่งตามEIMI';
+const ACCESSORY_TITLE = 'สายชาร์จ / อะแดปเตอร์';
 
 function SortHead({ col, sort, setSort }) {
   const active = sort.key === col.key;
@@ -153,8 +156,8 @@ function SortHead({ col, sort, setSort }) {
   );
 }
 
-function PriceCell({ main, all }) {
-  if (main === null) return <span className="text-faint">—</span>;
+function PriceCell({ main, all, empty = '—' }) {
+  if (main === null) return <span className="text-[13px] text-faint">{empty}</span>;
   return (
     <span className="inline-flex items-center justify-end gap-1.5">
       {all.length > 1 && (
@@ -243,12 +246,13 @@ function DetailTable({ detail, fresh, importId }) {
     <>
     <ul className="divide-y divide-seam-soft sm:hidden">
       {sorted.map((d, i) => {
-        const key = `${d.brand}|${d.model}|${d.capacity}|${d.condition}|${d.color}`;
+        const key = d.key;
         return (
           <li key={key} className={['flex items-start justify-between gap-3 px-4 py-3', fresh && i < 24 ? 'printing card-print' : ''].join(' ')}>
             <div className="min-w-0">
               <div className="text-[13px] font-semibold text-cover-deep">{d.brand}</div>
               <div className="font-semibold">{d.model}</div>
+              <div className="text-[13px] text-faint">{d.sku || 'ไม่มีรหัสสินค้า'}</div>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-mute">
                 {d.capacity && <span>{d.capacity}</span>}
                 <span className={['rounded px-1.5 text-[12px] font-semibold', d.condition === 'used' ? 'bg-cover text-cover-ink' : 'bg-wash text-ink'].join(' ')}>{COND[d.condition]}</span>
@@ -258,14 +262,14 @@ function DetailTable({ detail, fresh, importId }) {
             <div className="num shrink-0 text-right">
               <div className="text-lg leading-tight font-bold">{d.qty}</div>
               <div className="text-sm">{num(d.retail)}</div>
-              <div className="text-[13px] text-mute">ส่ง {num(d.wholesale)}</div>
+              <div className="text-[13px] text-mute">{d.wholesale === null ? NO_WHOLESALE : `ส่ง ${num(d.wholesale)}`}</div>
             </div>
           </li>
         );
       })}
     </ul>
     <div className="hidden overflow-x-auto sm:block">
-      <table className="num w-full min-w-[960px] border-collapse text-[15px] [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap">
+      <table className="num w-full min-w-[1040px] border-collapse text-[15px] [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap">
         <thead className="sticky top-0 z-10 bg-cover text-cover-ink">
           <tr>
             <th scope="col" className="w-9">
@@ -282,7 +286,7 @@ function DetailTable({ detail, fresh, importId }) {
         <tbody>
           {sorted.map((d, i) => {
             running += d.qty;
-            const key = `${d.brand}|${d.model}|${d.capacity}|${d.condition}|${d.color}`;
+            const key = d.key;
             const isOpen = open.has(key);
             const showBrand = sort.key !== 'default' || i === 0 || sorted[i - 1].brand !== d.brand;
             const animate = fresh && i < 24;
@@ -311,23 +315,24 @@ function DetailTable({ detail, fresh, importId }) {
                   <td className="px-3 py-2 font-semibold text-cover-deep" style={{ '--col': 1 }}>
                     {showBrand ? d.brand : <span className="sr-only">{d.brand}</span>}
                   </td>
-                  <td className="min-w-52 px-3 py-2 !whitespace-normal" style={{ '--col': 2 }}>{d.model}</td>
-                  <td className="max-w-32 px-3 py-2 !whitespace-normal" style={{ '--col': 3 }}>{d.capacity || <span className="text-faint">—</span>}</td>
-                  <td className="px-3 py-2" style={{ '--col': 4 }}>
+                  <td className="px-2 py-2 text-[13px] text-mute" style={{ '--col': 2 }}>{d.sku || <span className="text-faint">—</span>}</td>
+                  <td className="min-w-40 px-3 py-2 !whitespace-normal" style={{ '--col': 3 }}>{d.model}</td>
+                  <td className="max-w-32 px-3 py-2 !whitespace-normal" style={{ '--col': 4 }}>{d.capacity || <span className="text-faint">—</span>}</td>
+                  <td className="px-3 py-2" style={{ '--col': 5 }}>
                     <span className={['rounded px-2 py-px text-[13px] font-semibold whitespace-nowrap', d.condition === 'used' ? 'bg-cover text-cover-ink' : 'bg-wash text-ink'].join(' ')}>
                       {COND[d.condition]}
                     </span>
                   </td>
-                  <td className="px-3 py-2" style={{ '--col': 5 }}>{d.color || <span className="text-faint">ไม่ระบุ</span>}</td>
-                  <td className="px-3 py-2 text-right font-semibold" style={{ '--col': 6 }}>{d.qty}</td>
-                  <td className="px-3 py-2 text-right" style={{ '--col': 7 }}><PriceCell main={d.retail} all={d.retailPrices} /></td>
-                  <td className="px-3 py-2 text-right" style={{ '--col': 8 }}><PriceCell main={d.wholesale} all={d.wholesalePrices} /></td>
-                  <td className="px-3 py-2 text-right font-semibold text-mute" style={{ '--col': 9 }}>{num(running)}</td>
+                  <td className="max-w-36 px-3 py-2 !whitespace-normal" style={{ '--col': 6 }}>{d.color || <span className="text-faint">ไม่ระบุ</span>}</td>
+                  <td className="px-3 py-2 text-right font-semibold" style={{ '--col': 7 }}>{d.qty}</td>
+                  <td className="px-3 py-2 text-right" style={{ '--col': 8 }}><PriceCell main={d.retail} all={d.retailPrices} /></td>
+                  <td className="px-3 py-2 text-right" style={{ '--col': 9 }}><PriceCell main={d.wholesale} all={d.wholesalePrices} empty={NO_WHOLESALE} /></td>
+                  <td className="px-3 py-2 text-right font-semibold text-mute" style={{ '--col': 10 }}>{num(running)}</td>
                 </tr>
                 {isOpen && (
                   <tr className="bg-gold-soft/40">
                     <td />
-                    <td colSpan={9} className="px-2 pt-1 pb-3">
+                    <td colSpan={10} className="px-2 pt-1 pb-3">
                       <div className="rounded-lg border border-seam bg-white">
                         <SourceRows lines={d.lines} rowsByLine={rowsByLine} />
                       </div>
@@ -381,10 +386,52 @@ function ModelTable({ models, totals }) {
   );
 }
 
+function TotalBar({ label, qty, unit = 'เครื่อง' }) {
+  return (
+    <div className="num flex flex-wrap justify-between gap-2 border-t-2 border-cover-deep bg-wash px-4 py-2.5 font-bold text-cover-deep">
+      <span>{label}</span>
+      <span>
+        {num(qty)} {unit}
+      </span>
+    </div>
+  );
+}
+
 // ------------------------------------------------------------------ print (PDF)
+function PrintTable({ items, totalLabel, totalQty }) {
+  const H = ['ยี่ห้อ', 'รหัสสินค้า', 'รุ่นสินค้า', 'ความจุ', 'ประเภท', 'สี', 'จำนวน', 'ราคาขายปลีก', 'ราคาขายส่ง'];
+  const cell = (i) => ({ padding: '3px 6px', textAlign: i >= 6 ? 'right' : 'left', border: '1px solid #DCE3E3', fontVariantNumeric: 'tabular-nums' });
+  const rule = '2px solid #005A9C';
+  return (
+    <table>
+      <thead>
+        <tr>
+          {H.map((h, i) => (
+            <th key={h} style={{ padding: '5px 6px', textAlign: i >= 6 ? 'right' : 'left', border: '1px solid #C9D3D3' }}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((d) => (
+          <tr key={d.key} className={d.condition === 'used' ? 'used' : ''}>
+            {[d.brand, d.sku, d.model, d.capacity, COND[d.condition], d.color, num(d.qty), num(d.retail), d.wholesale === null ? NO_WHOLESALE : num(d.wholesale)].map((v, i) => (
+              <td key={i} style={cell(i)}>{v}</td>
+            ))}
+          </tr>
+        ))}
+        <tr>
+          <td colSpan={6} style={{ padding: '5px 6px', fontWeight: 700, borderTop: rule }}>{totalLabel}</td>
+          <td style={{ padding: '5px 6px', fontWeight: 700, textAlign: 'right', borderTop: rule }}>{num(totalQty)}</td>
+          <td colSpan={2} style={{ borderTop: rule }} />
+        </tr>
+      </tbody>
+    </table>
+  );
+}
+
 function PrintReport({ data }) {
   if (!data) return null;
-  const { detail, totals, title } = data;
+  const { detail, accessories, totals, title } = data;
   return createPortal(
     <div className="print-only" aria-hidden="true">
       <h1 style={{ fontFamily: 'var(--font-stamp)', fontSize: 20, fontWeight: 700, color: '#005A9C', margin: '0 0 8px' }}>{title}</h1>
@@ -399,30 +446,14 @@ function PrintReport({ data }) {
           </tr>
         </tbody>
       </table>
-      <table>
-        <thead>
-          <tr>
-            {['ยี่ห้อ', 'รุ่นสินค้า', 'ความจุ', 'ประเภท', 'สี', 'จำนวน', 'ราคาขายปลีก', 'ราคาขายส่ง'].map((h, i) => (
-              <th key={h} style={{ padding: '5px 6px', textAlign: i >= 5 ? 'right' : 'left', border: '1px solid #C9D3D3' }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {detail.map((d) => (
-            <tr key={`${d.brand}|${d.model}|${d.capacity}|${d.condition}|${d.color}`} className={d.condition === 'used' ? 'used' : ''}>
-              {[d.brand, d.model, d.capacity, COND[d.condition], d.color, num(d.qty), num(d.retail), num(d.wholesale)].map((v, i) => (
-                <td key={i} style={{ padding: '3px 6px', textAlign: i >= 5 ? 'right' : 'left', border: '1px solid #DCE3E3', fontVariantNumeric: 'tabular-nums' }}>{v}</td>
-              ))}
-            </tr>
-          ))}
-          <tr>
-            <td colSpan={5} style={{ padding: '5px 6px', fontWeight: 700, borderTop: '2px solid #005A9C' }}>รวมทั้งหมด</td>
-            <td style={{ padding: '5px 6px', fontWeight: 700, textAlign: 'right', borderTop: '2px solid #005A9C' }}>{num(totals.qty)}</td>
-            <td colSpan={2} style={{ borderTop: '2px solid #005A9C' }} />
-          </tr>
-        </tbody>
-      </table>
-      <p style={{ marginTop: 8, color: '#574d50' }}>หมายเหตุ: รวมจำนวนตามยี่ห้อ รุ่น ความจุ ประเภท และสี จากรายงานสต๊อกต้นฉบับ ราคาที่แสดงคือราคาของเครื่องส่วนใหญ่ในกลุ่ม</p>
+      <PrintTable items={detail} totalLabel="รวมเครื่อง" totalQty={totals.deviceQty} />
+      {accessories.length > 0 && (
+        <>
+          <h2 style={{ fontFamily: 'var(--font-stamp)', fontSize: 15, fontWeight: 700, color: '#005A9C', margin: '16px 0 6px', breakAfter: 'avoid' }}>{ACCESSORY_TITLE}</h2>
+          <PrintTable items={accessories} totalLabel="รวมสายชาร์จ/อะแดปเตอร์" totalQty={totals.accessoryQty} />
+        </>
+      )}
+      <p style={{ marginTop: 8, color: '#574d50' }}>หมายเหตุ: รวมจำนวนตามรหัสสินค้าและสี จากรายงานสต๊อกต้นฉบับ ราคาที่แสดงคือราคาของเครื่องส่วนใหญ่ในกลุ่ม</p>
     </div>,
     document.body,
   );
@@ -712,7 +743,7 @@ export default function StockPage() {
               value={view}
               onChange={setView}
               options={[
-                { value: 'detail', label: 'แยกตามสี' },
+                { value: 'detail', label: 'ตามรหัสสินค้า' },
                 { value: 'model', label: 'สรุปตามรุ่น' },
               ]}
             />
@@ -743,7 +774,7 @@ export default function StockPage() {
             </div>
           </div>
 
-          {data && data.detail.length === 0 ? (
+          {data && data.detail.length === 0 && data.accessories.length === 0 ? (
             <div className="flex flex-wrap items-center gap-4 px-6 py-10">
               <FilterX size={22} className="text-cover-deep" />
               <p className="text-mute">ไม่มีสินค้าที่ตรงกับตัวกรองนี้</p>
@@ -762,16 +793,27 @@ export default function StockPage() {
           ) : data ? (
             <div className={['transition-opacity', loading ? 'opacity-60' : ''].join(' ')}>
               {view === 'detail' ? (
-                <DetailTable detail={data.detail} fresh={freshId === currentId} importId={currentId} />
+                <>
+                  {data.detail.length > 0 && (
+                    <>
+                      <DetailTable detail={data.detail} fresh={freshId === currentId} importId={currentId} />
+                      <TotalBar label={`รวมเครื่อง ${num(data.totals.deviceLines)} รายการ`} qty={data.totals.deviceQty} />
+                    </>
+                  )}
+                  {data.accessories.length > 0 && (
+                    <>
+                      <h3 className="border-t border-seam px-4 pt-5 pb-3 font-stamp text-[17px] font-bold text-cover-deep">{ACCESSORY_TITLE}</h3>
+                      <DetailTable detail={data.accessories} fresh={freshId === currentId} importId={currentId} />
+                      <TotalBar label={`รวมสายชาร์จ/อะแดปเตอร์ ${num(data.totals.accessoryLines)} รายการ`} qty={data.totals.accessoryQty} unit="ชิ้น" />
+                    </>
+                  )}
+                </>
               ) : (
-                <ModelTable models={data.models} totals={data.totals} />
+                <>
+                  <ModelTable models={data.models} totals={data.totals} />
+                  <TotalBar label={`รวมทั้งหมด ${num(data.totals.models)} รุ่น`} qty={data.totals.qty} />
+                </>
               )}
-              <div className="num flex flex-wrap justify-between gap-2 border-t-2 border-cover-deep bg-wash px-4 py-2.5 font-bold text-cover-deep">
-                <span>
-                  รวมทั้งหมด {num(view === 'detail' ? data.totals.lines : data.totals.models)} {view === 'detail' ? 'รายการ' : 'รุ่น'}
-                </span>
-                <span>{num(data.totals.qty)} เครื่อง</span>
-              </div>
             </div>
           ) : (
             <div className="h-80 animate-pulse bg-white/60" />
