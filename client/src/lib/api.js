@@ -37,4 +37,24 @@ export const api = {
   summary: (id, filters) => request(`/api/imports/${id}/summary${qs(filters)}`),
   rows: (id) => request(`/api/imports/${id}/rows`),
   exportUrl: (id, fmt, filters) => `/api/imports/${id}/export.${fmt}${qs(filters)}`,
+
+  // สรุปยอดรายวัน
+  sales: () => request('/api/sales'),
+  salesToday: () => request('/api/sales/today'),
+  uploadSales: (files) => {
+    const fd = new FormData();
+    for (const f of files) fd.append('files', f);
+    return request('/api/sales', { method: 'POST', body: fd });
+  },
+  createSale: (body) => request('/api/sales/manual', { method: 'POST', body: JSON.stringify(body) }),
+  updateSale: (id, patch) => request(`/api/sales/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  deleteSale: (id) => request(`/api/sales/${id}`, { method: 'DELETE' }),
+  addSlips: (id, files) => {
+    const fd = new FormData();
+    for (const f of files) fd.append('files', f);
+    return request(`/api/sales/${id}/slips`, { method: 'POST', body: fd });
+  },
+  updateSlip: (id, patch) => request(`/api/slips/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  deleteSlip: (id) => request(`/api/slips/${id}`, { method: 'DELETE' }),
+  dayExportUrl: (date, fmt) => `/api/sales/day/${date}/export.${fmt}`,
 };

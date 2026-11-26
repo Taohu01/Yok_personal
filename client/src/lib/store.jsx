@@ -34,14 +34,24 @@ export function StoreProvider({ children }) {
     }
   }, []);
 
+  const [salesToday, setSalesToday] = useState(null);
+  const reloadSalesToday = useCallback(async () => {
+    try {
+      setSalesToday(await api.salesToday());
+    } catch {
+      /* the badge is optional */
+    }
+  }, []);
+
   useEffect(() => {
     reloadCards();
     reloadImports();
-  }, [reloadCards, reloadImports]);
+    reloadSalesToday();
+  }, [reloadCards, reloadImports, reloadSalesToday]);
 
   const value = useMemo(
-    () => ({ cards, setCards, reloadCards, imports, setImports, reloadImports, toast, toasts, loadError }),
-    [cards, reloadCards, imports, reloadImports, toast, toasts, loadError],
+    () => ({ cards, setCards, reloadCards, imports, setImports, reloadImports, salesToday, reloadSalesToday, toast, toasts, loadError }),
+    [cards, reloadCards, imports, reloadImports, salesToday, reloadSalesToday, toast, toasts, loadError],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

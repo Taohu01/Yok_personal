@@ -89,7 +89,11 @@ const THAI_PUA = {
  * columns using the x positions of the header row (the line containing ยี่ห้อ).
  * Works for PDFs exported from a report or spreadsheet; scanned images have no text.
  */
-export async function pdfToGrid(buf) {
+/**
+ * Every page of a PDF as text lines (top to bottom). Each line has its y, its
+ * height and its text runs (left to right), Thai fragments joined and repaired.
+ */
+export async function pdfPages(buf) {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const doc = await pdfjs.getDocument({
     data: new Uint8Array(buf),
@@ -99,7 +103,7 @@ export async function pdfToGrid(buf) {
     verbosity: 0,
   }).promise;
 
-  const lines = [];
+  const pages = [];
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
     const { items } = await page.getTextContent();
@@ -118,8 +122,13 @@ export async function pdfToGrid(buf) {
       l.items.sort((a, b) => a.x - b.x);
       l.items = toRuns(l.items, l.h);
     }
-    lines.push(...pageLines.filter((l) => l.items.length));
+    pages.push({ page: p, lines: pageLines.filter((l) => l.items.length) });
   }
+  return pages;
+}
+
+export async function pdfToGrid(buf) {
+  const lines = (await pdfPages(buf)).flatMap((p) => p.lines);
   if (!lines.length) {
     throw new Error('ไฟล์ PDF นี้ไม่มีข้อความให้อ่าน (อาจเป็นภาพสแกน) ลองส่งออกจากโปรแกรมเป็น Excel หรือ CSV แทน');
   }

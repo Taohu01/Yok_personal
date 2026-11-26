@@ -9,3 +9,6 @@ data/
 
 # real stock-report extracts used by the tests; kept on this machine only
 server/test/fixtures/
+
+# sample files for trying the app by hand (made-up data)
+ไฟล์ทดลอง/

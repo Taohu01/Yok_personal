@@ -8,6 +8,7 @@ import { fileToGrid, fileKind } from './parse/grid.js';
 import { parseStockGrid } from './parse/stock.js';
 import { summarize, filterRows } from './summary.js';
 import { toCsv, toXlsx, reportTitle } from './export.js';
+import { salesRoutes } from './sales.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -196,6 +197,9 @@ app.get('/api/imports/:id/export.:fmt', async (req, res) => {
   }
   fail(res, 400, 'รูปแบบไฟล์ไม่รองรับ');
 });
+
+// ---------------------------------------------------------------- สรุปยอดรายวัน
+salesRoutes(app, upload);
 
 // ---------------------------------------------------------------- client
 const dist = join(root, 'dist');

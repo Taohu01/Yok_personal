@@ -6,14 +6,9 @@ cd /d "%~dp0"
 set "URL=http://localhost:3001"
 set "PING=http://127.0.0.1:3001/api/imports"
 
-rem ---- already running? just open the browser ----
-powershell -NoProfile -Command "try { Invoke-WebRequest -UseBasicParsing '%PING%' -TimeoutSec 2 | Out-Null; exit 0 } catch { exit 1 }"
-if %errorlevel%==0 (
-  echo เซิร์ฟเวอร์เปิดอยู่แล้ว กำลังเปิดเบราว์เซอร์...
-  if not "%YOK_NO_BROWSER%"=="1" start "" "%URL%"
-  timeout /t 2 >nul
-  exit /b 0
-)
+rem ---- an older server still running? stop it so the newest code is used ----
+powershell -NoProfile -Command "$c = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue; if ($c) { $p = Get-Process -Id $c.OwningProcess -ErrorAction SilentlyContinue; if ($p -and $p.ProcessName -eq 'node') { Stop-Process -Id $p.Id -Force; Start-Sleep -Milliseconds 700; exit 0 } }; exit 1"
+if %errorlevel%==0 echo ปิดเซิร์ฟเวอร์ตัวเก่าแล้ว กำลังเปิดตัวใหม่...
 
 where node >nul 2>nul
 if errorlevel 1 (

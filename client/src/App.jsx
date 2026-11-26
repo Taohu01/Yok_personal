@@ -1,9 +1,10 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
-import { CircleAlert, CircleCheck, Info, NotebookPen, Boxes } from 'lucide-react';
+import { CircleAlert, CircleCheck, Info, NotebookPen, Boxes, ReceiptText } from 'lucide-react';
 import { StoreProvider, useStore } from './lib/store.jsx';
 import { thaiShort, todayISO } from './lib/thai.js';
 import CardsPage from './pages/Cards.jsx';
 import StockPage from './pages/Stock.jsx';
+import SalesPage from './pages/Sales.jsx';
 
 function Seal({ size = 44 }) {
   return (
@@ -30,7 +31,7 @@ function NavItem({ to, icon: Icon, label, count }) {
         [
           'group relative flex items-center gap-3 py-2.5 pr-4 pl-5 font-semibold transition-colors',
           'lg:mr-0 lg:rounded-l-[10px]',
-          'max-lg:rounded-t-[10px] max-lg:px-4',
+          'max-lg:shrink-0 max-lg:rounded-t-[10px] max-lg:px-4 max-sm:gap-2 max-sm:px-3 whitespace-nowrap',
           isActive
             ? "bg-page text-cover-deep"
             : "text-cover-ink/85 hover:bg-cover-2 hover:text-cover-ink",
@@ -79,7 +80,7 @@ function Toasts() {
 }
 
 function Shell() {
-  const { cards, imports, loadError } = useStore();
+  const { cards, imports, salesToday, loadError } = useStore();
   const doing = cards ? cards.filter((c) => c.status === 'doing').length : null;
   const latestQty = imports?.[0] ? imports[0].qty.toLocaleString('th-TH') : null;
 
@@ -93,9 +94,10 @@ function Shell() {
             <div className="text-[13px] text-cover-mute">{thaiShort(todayISO())}</div>
           </div>
         </div>
-        <nav aria-label="หน้าหลัก" className="flex gap-1 px-3 lg:flex-col lg:gap-1 lg:pr-0 lg:pl-3">
+        <nav aria-label="หน้าหลัก" className="flex gap-1 overflow-x-auto px-3 [scrollbar-width:none] lg:flex-col lg:gap-1 lg:overflow-visible lg:pr-0 lg:pl-3">
           <NavItem to="/cards" icon={NotebookPen} label="การ์ดงาน" count={doing} />
           <NavItem to="/stock" icon={Boxes} label="สต๊อกสินค้า" count={latestQty} />
+          <NavItem to="/sales" icon={ReceiptText} label="สรุปยอดรายวัน" count={salesToday?.bills || null} />
         </nav>
         <p className="absolute right-6 bottom-6 left-6 hidden text-[13px] leading-relaxed text-cover-mute lg:block">
           บันทึกลงเครื่องนี้ในไฟล์ <span className="text-cover-ink">data/yok.db</span>
@@ -115,6 +117,7 @@ function Shell() {
           <Route path="/" element={<Navigate to="/cards" replace />} />
           <Route path="/cards" element={<CardsPage />} />
           <Route path="/stock" element={<StockPage />} />
+          <Route path="/sales" element={<SalesPage />} />
           <Route path="*" element={<Navigate to="/cards" replace />} />
         </Routes>
       </main>

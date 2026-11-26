@@ -55,4 +55,51 @@ db.exec(`
     wholesale  REAL
   );
   CREATE INDEX IF NOT EXISTS stock_rows_import ON stock_rows(import_id);
+
+  -- สรุปยอดรายวัน: one row per sales receipt (ใบเสร็จ)
+  CREATE TABLE IF NOT EXISTS sales (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    receipt_no  TEXT    NOT NULL DEFAULT '',
+    sale_date   TEXT    NOT NULL,               -- YYYY-MM-DD (ค.ศ.)
+    sale_time   TEXT    NOT NULL DEFAULT '',    -- HH:MM from the receipt, if printed
+    buyer       TEXT    NOT NULL DEFAULT '',
+    discount    REAL    NOT NULL DEFAULT 0,     -- all discounts on the bill (items + bill)
+    net         REAL,                           -- ยอดสุทธิ
+    note        TEXT    NOT NULL DEFAULT '',
+    file_name   TEXT    NOT NULL DEFAULT '',    -- the receipt PDF as uploaded
+    file_path   TEXT    NOT NULL DEFAULT '',    -- stored under data/files
+    issues      TEXT    NOT NULL DEFAULT '[]',  -- JSON: what the reader could not find
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS sales_receipt_no ON sales(receipt_no) WHERE receipt_no != '';
+  CREATE INDEX IF NOT EXISTS sales_date ON sales(sale_date);
+
+  CREATE TABLE IF NOT EXISTS sale_items (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    sale_id   INTEGER NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+    line      INTEGER NOT NULL,
+    sku       TEXT    NOT NULL DEFAULT '',
+    name      TEXT    NOT NULL,
+    imei      TEXT    NOT NULL DEFAULT '',
+    qty       REAL    NOT NULL DEFAULT 1,
+    price     REAL,
+    discount  REAL    NOT NULL DEFAULT 0,
+    amount    REAL
+  );
+  CREATE INDEX IF NOT EXISTS sale_items_sale ON sale_items(sale_id);
+
+  -- customer transfer slips; one receipt can have several
+  CREATE TABLE IF NOT EXISTS sale_slips (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    sale_id     INTEGER NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+    file_name   TEXT    NOT NULL,
+    file_path   TEXT    NOT NULL,
+    mime        TEXT    NOT NULL DEFAULT '',
+    amount      REAL,                           -- typed in by hand when wanted
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+  CREATE INDEX IF NOT EXISTS sale_slips_sale ON sale_slips(sale_id);
 `);
+
+/** Uploaded receipts and slips live here (data/ is not in git). */
+export const filesDir = process.env.YOK_FILES || join(dbPath === ':memory:' ? join(root, 'data') : dirname(dbPath), 'files');
