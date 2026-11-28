@@ -91,6 +91,7 @@ function CardForm({ initial, onSubmit, onCancel, submitLabel, suggestions, autoF
 
   async function submit(e) {
     e.preventDefault();
+    if (busy) return; // Ctrl+Enter pressed twice would save the card twice
     if (!d.title.trim()) {
       setError('ใส่หัวข้องานก่อนบันทึก');
       return;

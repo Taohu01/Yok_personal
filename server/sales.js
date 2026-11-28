@@ -5,10 +5,11 @@ import { randomBytes } from 'node:crypto';
 import { db, filesDir } from './db.js';
 import { parseReceiptPdf } from './parse/receipt.js';
 import { dayCsv, dayXlsx, dayTitle } from './salesExport.js';
+import { amount, isDate } from './util.js';
 
 const fail = (res, status, message) => res.status(status).json({ error: message });
 const utf8Name = (f) => Buffer.from(f.originalname, 'latin1').toString('utf8');
-const isISO = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d));
+const isISO = isDate;
 const round = (n) => Math.round(n * 100) / 100;
 
 export function todayISO(d = new Date()) {
@@ -29,6 +30,16 @@ function saveFile(kind, buf, originalName) {
   writeFileSync(join(dir, name), buf);
   return `${kind}/${name}`;
 }
+/** A stored upload, or a clear 404 when it has been removed from disk. */
+function sendStored(res, rel, type, asciiName, name) {
+  const full = resolve(filesDir, rel);
+  if (!full.startsWith(resolve(filesDir)) || !existsSync(full)) {
+    return res.status(404).json({ error: 'ไม่พบไฟล์นี้ในเครื่องแล้ว (อาจถูกลบหรือย้ายออกจากโฟลเดอร์ data/files)' });
+  }
+  res.setHeader('Content-Disposition', `inline; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(name)}`);
+  res.type(type).sendFile(full);
+}
+
 function removeFile(rel) {
   if (!rel) return;
   const full = resolve(filesDir, rel);
@@ -61,14 +72,15 @@ function saleOut(s, items, slips) {
 function load(where = '', ...args) {
   const sales = db.prepare(`SELECT * FROM sales ${where} ORDER BY sale_date DESC, created_at ASC, id ASC`).all(...args);
   if (!sales.length) return [];
-  const ids = sales.map((s) => s.id);
-  const inIds = `(${ids.map(() => '?').join(',')})`;
+  // Same filter as a sub-query, not a list of ids: SQLite allows at most 32766 bound values,
+  // and a year of bills passes that.
+  const picked = `SELECT id FROM sales ${where}`;
   const items = new Map();
-  for (const i of db.prepare(`SELECT * FROM sale_items WHERE sale_id IN ${inIds} ORDER BY sale_id, line`).all(...ids)) {
+  for (const i of db.prepare(`SELECT * FROM sale_items WHERE sale_id IN (${picked}) ORDER BY sale_id, line`).all(...args)) {
     (items.get(i.sale_id) || items.set(i.sale_id, []).get(i.sale_id)).push(i);
   }
   const slips = new Map();
-  for (const s of db.prepare(`SELECT * FROM sale_slips WHERE sale_id IN ${inIds} ORDER BY id`).all(...ids)) {
+  for (const s of db.prepare(`SELECT * FROM sale_slips WHERE sale_id IN (${picked}) ORDER BY id`).all(...args)) {
     (slips.get(s.sale_id) || slips.set(s.sale_id, []).get(s.sale_id)).push(s);
   }
   return sales.map((s) => saleOut(s, items, slips));
@@ -131,20 +143,23 @@ export function listDays({ from, to } = {}) {
 function cleanItems(items) {
   if (!Array.isArray(items)) return [];
   return items
-    .map((i) => {
-      const qty = Math.max(0, Number(i.qty) || 0) || 1;
-      const price = i.price === '' || i.price === null || i.price === undefined ? null : Number(i.price);
-      const discount = Number(i.discount) || 0;
-      let amount = i.amount === '' || i.amount === null || i.amount === undefined ? null : Number(i.amount);
-      if (amount === null && price !== null && Number.isFinite(price)) amount = round(qty * price - discount);
+    .map((i, n) => {
+      const name = String(i.name ?? '').trim();
+      const at = `รายการที่ ${n + 1}${name ? ` (${name.slice(0, 30)})` : ''}`;
+      // amounts arrive as typed: "27,180" must stay 27180, not become empty
+      const qty = amount(i.qty, `จำนวน ${at}`) ?? 1;
+      const price = amount(i.price, `ราคา ${at}`);
+      const discount = amount(i.discount, `ส่วนลด ${at}`) ?? 0;
+      let total = amount(i.amount, `จำนวนเงิน ${at}`);
+      if (total === null && price !== null) total = round(qty * price - discount);
       return {
         sku: String(i.sku ?? '').trim().slice(0, 60),
-        name: String(i.name ?? '').trim().slice(0, 300),
+        name: name.slice(0, 300),
         imei: String(i.imei ?? '').trim().slice(0, 300),
         qty,
-        price: Number.isFinite(price) ? price : null,
+        price,
         discount,
-        amount: Number.isFinite(amount) ? amount : null,
+        amount: total,
       };
     })
     .filter((i) => i.name || i.sku);
@@ -182,6 +197,8 @@ export function createSale(r, file) {
     throw e;
   }
   const items = cleanItems(r.items);
+  const discount = amount(r.discount, 'ส่วนลดรวม') ?? 0;
+  const net = amount(r.net, 'ยอดสุทธิ');
   return tx(() => {
     const id = Number(
       db
@@ -191,8 +208,8 @@ export function createSale(r, file) {
           isISO(r.date ?? r.sale_date) ? (r.date ?? r.sale_date) : todayISO(),
           String(r.time ?? r.sale_time ?? '').slice(0, 5),
           String(r.buyer ?? '').trim().slice(0, 200),
-          Number(r.discount) || 0,
-          r.net === null || r.net === undefined || r.net === '' ? null : Number(r.net),
+          discount,
+          net,
           String(r.note ?? '').slice(0, 1000),
           file?.name || '',
           file?.path || '',
@@ -243,7 +260,17 @@ export function salesRoutes(app, upload) {
         continue;
       }
       const path = saveFile('receipts', f.buffer, name);
-      const id = createSale(parsed, { name, path });
+      let id;
+      try {
+        id = createSale(parsed, { name, path });
+      } catch (e) {
+        removeFile(path); // nothing points at it any more
+        if (e.status === 409) {
+          out.duplicates.push(parsed.receiptNo);
+          continue;
+        }
+        throw e;
+      }
       if (pdfs.length === 1 && images.length) {
         addSlips(id, images);
         out.slips = images.length;
@@ -279,13 +306,19 @@ export function salesRoutes(app, upload) {
     if ('sale_time' in b) set.sale_time = String(b.sale_time ?? '').slice(0, 5);
     if ('buyer' in b) set.buyer = String(b.buyer ?? '').trim().slice(0, 200);
     if ('note' in b) set.note = String(b.note ?? '').slice(0, 1000);
-    if ('discount' in b) set.discount = Number(b.discount) || 0;
-    if ('net' in b) set.net = b.net === '' || b.net === null ? null : Number(b.net);
-    if (Object.keys(set).length || 'items' in b) set.issues = '[]'; // checked by a person now
+    let items;
+    try {
+      if ('discount' in b) set.discount = amount(b.discount, 'ส่วนลดรวม') ?? 0;
+      if ('net' in b) set.net = amount(b.net, 'ยอดสุทธิ');
+      if ('items' in b) items = cleanItems(b.items);
+    } catch (e) {
+      return fail(res, e.status || 400, e.message);
+    }
+    if (Object.keys(set).length || items) set.issues = '[]'; // checked by a person now
     tx(() => {
       const keys = Object.keys(set);
       if (keys.length) db.prepare(`UPDATE sales SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`).run(...keys.map((k) => set[k]), id);
-      if ('items' in b) writeItems(id, cleanItems(b.items));
+      if (items) writeItems(id, items);
     });
     res.json(oneSale(id));
   });
@@ -304,8 +337,7 @@ export function salesRoutes(app, upload) {
   app.get('/api/sales/:id/file', (req, res) => {
     const s = db.prepare('SELECT file_name, file_path FROM sales WHERE id = ?').get(Number(req.params.id));
     if (!s?.file_path) return fail(res, 404, 'ไม่มีไฟล์ใบเสร็จ');
-    res.setHeader('Content-Disposition', `inline; filename="receipt.pdf"; filename*=UTF-8''${encodeURIComponent(s.file_name)}`);
-    res.type('application/pdf').sendFile(resolve(filesDir, s.file_path));
+    sendStored(res, s.file_path, 'application/pdf', 'receipt.pdf', s.file_name);
   });
 
   app.post('/api/sales/:id/slips', upload.array('files', 10), (req, res) => {
@@ -320,16 +352,19 @@ export function salesRoutes(app, upload) {
   app.get('/api/slips/:id/file', (req, res) => {
     const s = db.prepare('SELECT * FROM sale_slips WHERE id = ?').get(Number(req.params.id));
     if (!s) return fail(res, 404, 'ไม่พบสลิปนี้');
-    res.setHeader('Content-Disposition', `inline; filename="slip${extname(s.file_path)}"; filename*=UTF-8''${encodeURIComponent(s.file_name)}`);
-    res.type(s.mime || 'application/octet-stream').sendFile(resolve(filesDir, s.file_path));
+    sendStored(res, s.file_path, s.mime || 'application/octet-stream', `slip${extname(s.file_path)}`, s.file_name);
   });
 
   app.patch('/api/slips/:id', (req, res) => {
     const s = db.prepare('SELECT * FROM sale_slips WHERE id = ?').get(Number(req.params.id));
     if (!s) return fail(res, 404, 'ไม่พบสลิปนี้');
-    const amount = req.body.amount === '' || req.body.amount === null ? null : Number(req.body.amount);
-    if (amount !== null && !Number.isFinite(amount)) return fail(res, 400, 'ยอดในสลิปต้องเป็นตัวเลข');
-    db.prepare('UPDATE sale_slips SET amount = ? WHERE id = ?').run(amount, s.id);
+    let value;
+    try {
+      value = amount(req.body.amount, 'ยอดในสลิป');
+    } catch (e) {
+      return fail(res, 400, e.message);
+    }
+    db.prepare('UPDATE sale_slips SET amount = ? WHERE id = ?').run(value, s.id);
     res.json(oneSale(s.sale_id));
   });
 

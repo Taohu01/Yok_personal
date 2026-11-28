@@ -12,6 +12,7 @@ import {
   FileText,
   FileUp,
   Printer,
+  ScanBarcode,
   Search,
   Sheet,
   Trash2,
@@ -30,25 +31,39 @@ const COND = { new: 'มือ 1', used: 'มือ 2' };
 const FILE_ICON = { excel: FileSpreadsheet, csv: Sheet, pdf: FileText };
 
 // ------------------------------------------------------------------ upload
-function useUpload(onDone) {
+/** "IMEI 184/184 ตรงกับสต๊อกทุกรหัส" or what does not agree. */
+function imeiVerdict(check) {
+  if (!check) return null;
+  const problems = check.missing.length + check.diff.length + check.extra.length;
+  return { ok: problems === 0, problems, text: problems ? `ไม่ตรง ${problems} รหัส` : 'ตรงกับสต๊อกทุกรหัส' };
+}
+
+function useUpload(onDone, currentId) {
   const { toast, reloadImports } = useStore();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const upload = useCallback(
-    async (file) => {
-      if (!file) return;
-      if (!/\.(xlsx|xls|csv|pdf)$/i.test(file.name)) {
-        setError(`"${file.name}" ไม่ใช่ไฟล์ที่รองรับ ใช้ได้เฉพาะ .xlsx .xls .csv และ .pdf`);
+    async (input) => {
+      const files = [...(input?.length !== undefined ? input : [input])].filter(Boolean);
+      if (!files.length) return;
+      const bad = files.find((f) => !/\.(xlsx|xls|csv|pdf)$/i.test(f.name));
+      if (bad) {
+        setError(`"${bad.name}" ไม่ใช่ไฟล์ที่รองรับ ใช้ได้เฉพาะ .xlsx .xls .csv และ .pdf`);
         return;
       }
       setBusy(true);
       setError('');
       try {
-        const imp = await api.upload(file);
+        const imp = await api.upload(files, currentId);
         await reloadImports();
         onDone(imp);
+        const v = imeiVerdict(imp.imeiCheck);
+        const imei = imp.imeiAttached ? `IMEI ${num(imp.imei_count)} เครื่อง ${v ? `(${v.text})` : ''}` : '';
         const skipped = imp.skipped.length ? ` (ข้าม ${imp.skipped.length} บรรทัด)` : '';
-        toast(`นำเข้า ${file.name} แล้ว · ${num(imp.qty)} เครื่อง${skipped}`, imp.skipped.length ? 'info' : 'ok');
+        const msg = imp.stockAdded
+          ? `นำเข้า ${imp.filename} แล้ว · ${num(imp.qty)} เครื่อง${skipped}${imei ? ` · ${imei}` : ''}`
+          : `เพิ่ม${imei}ให้ ${imp.filename} แล้ว`;
+        toast(msg, imp.skipped.length || (v && !v.ok) ? 'info' : 'ok');
       } catch (e) {
         setError(e.message);
         toast(e.message, 'error');
@@ -56,7 +71,7 @@ function useUpload(onDone) {
         setBusy(false);
       }
     },
-    [onDone, reloadImports, toast],
+    [onDone, reloadImports, toast, currentId],
   );
   return { upload, busy, error, setError };
 }
@@ -75,7 +90,7 @@ function DropZone({ onFile, busy, error }) {
         onDrop={(e) => {
           e.preventDefault();
           setOver(false);
-          onFile(e.dataTransfer.files[0]);
+          onFile(e.dataTransfer.files);
         }}
         className={[
           'flex flex-col items-center gap-4 rounded-[10px] border-2 border-dashed px-6 py-12 text-center transition-colors',
@@ -88,12 +103,13 @@ function DropZone({ onFile, busy, error }) {
         <div>
           <p className="font-stamp text-xl font-bold text-cover-deep">{busy ? 'กำลังอ่านไฟล์…' : 'ลากไฟล์รายงานสต๊อกมาวางที่นี่'}</p>
           <p className="mt-1 text-mute">Excel (.xlsx .xls), CSV หรือ PDF ที่ส่งออกจากระบบ</p>
+          <p className="mt-1 text-sm text-mute">มีไฟล์ราคาขายปลีก-ส่งที่มีเลข IMEI ด้วย เลือกทั้งสองไฟล์พร้อมกันได้เลย</p>
         </div>
         <button type="button" className="btn btn-primary" disabled={busy} onClick={() => input.current.click()}>
           <Upload size={18} />
           เลือกไฟล์
         </button>
-        <input ref={input} type="file" accept={ACCEPT} className="sr-only" tabIndex={-1} onChange={(e) => onFile(e.target.files[0])} />
+        <input ref={input} type="file" accept={ACCEPT} multiple className="sr-only" tabIndex={-1} onChange={(e) => (onFile([...e.target.files]), (e.target.value = ''))} />
       </div>
       {error && (
         <p role="alert" className="mt-3 flex items-start gap-2 text-danger">
@@ -116,6 +132,10 @@ function FormatGuide() {
       </p>
       <p className="mt-3 max-w-prose text-mute">
         ส่งออกเป็นแบบ <span className="text-ink">สต๊อกสินค้าออฟฟิศ</span>: ยี่ห้อ รุ่น ความจุ มือ 1/มือ 2 สี จำนวน ราคาขายปลีก ราคาขายส่ง พร้อมยอดรวม
+      </p>
+      <p className="mt-3 max-w-prose text-mute">
+        <span className="text-ink">เลข IMEI:</span> วางไฟล์ <span className="text-ink">รายงานสินค้าราคาขายปลีกและขายส่ง</span> (หัวตาราง รุ่น / IMEI · รหัสสินค้า) พร้อมกันหรือทีหลังก็ได้
+        ระบบจับคู่ตามรหัสสินค้า แล้วเพิ่มชีต "รายการ IMEI" ในไฟล์ส่งออก
       </p>
     </section>
   );
@@ -170,6 +190,85 @@ function PriceCell({ main, all, empty = '—' }) {
   );
 }
 
+/** IMEI status of the open import: count, whether it agrees with the stock, and what does not. */
+function ImeiBar({ imp, check, busy, onAdd }) {
+  const [open, setOpen] = useState(false);
+  const v = imeiVerdict(check);
+  if (!imp.imei_count) {
+    return (
+      <div className="leaf mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
+        <ScanBarcode size={20} className="shrink-0 text-faint" />
+        <span className="min-w-0 flex-1 text-mute">
+          <span className="font-semibold text-ink">ยังไม่มีเลข IMEI</span> · วางไฟล์ <span className="text-ink">รายงานสินค้าราคาขายปลีกและขายส่ง</span> เพื่อเพิ่มชีต "รายการ IMEI" ในไฟล์ส่งออก
+        </span>
+        <button type="button" className="btn btn-outline min-h-9 py-1 text-[14px]" onClick={onAdd} disabled={busy}>
+          <Upload size={16} />
+          เพิ่มไฟล์ IMEI
+        </button>
+      </div>
+    );
+  }
+  const rows = check ? [...check.missing.map((m) => ({ ...m, why: `ในสต๊อก ${m.qty} · ไม่มี IMEI` })), ...check.diff.map((m) => ({ ...m, why: `ในสต๊อก ${m.qty} · IMEI ${m.imeis}` })), ...check.extra.map((m) => ({ ...m, model: m.name, why: `IMEI ${m.imeis} · ไม่มีในสต๊อก` }))] : [];
+  return (
+    <div className="leaf mb-5 px-5 py-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <ScanBarcode size={20} className={['shrink-0', v?.ok ? 'text-ok' : 'text-warn'].join(' ')} />
+        <span className="min-w-0 flex-1">
+          <span className="num font-semibold">IMEI {num(imp.imei_count)} เครื่อง</span>
+          {v && <span className={['font-semibold', v.ok ? 'text-ok' : 'text-warn'].join(' ')}> · {v.text}</span>}
+          <span className="block truncate text-[13px] text-mute" title={imp.imei_file}>{imp.imei_file}</span>
+        </span>
+        {rows.length > 0 && (
+          <button type="button" className="text-sm font-semibold text-cover-deep underline" onClick={() => setOpen(!open)}>
+            {open ? 'ซ่อน' : 'ดูรหัสที่ไม่ตรง'}
+          </button>
+        )}
+        <button type="button" className="btn btn-ghost min-h-9 py-1 text-[14px]" onClick={onAdd} disabled={busy} title="วางไฟล์ IMEI ใหม่แทนไฟล์เดิม">
+          <Upload size={16} />
+          เปลี่ยนไฟล์ IMEI
+        </button>
+      </div>
+      {open && (
+        <ul className="num mt-2 grid gap-1 border-t border-seam-soft pt-2 text-[14px]">
+          {rows.map((m) => (
+            <li key={`${m.sku}|${m.color || ''}|${m.why}`}>
+              <span className="font-semibold text-cover-deep">{m.sku}</span> · {m.model} {m.color} · <span className="text-warn">{m.why}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** The units of one stock line; the one matching the search is marked. */
+function ImeiList({ imeis, q, condition }) {
+  if (!imeis?.length) return null;
+  const needle = (q || '').trim().toLowerCase();
+  return (
+    <div className="border-b border-seam-soft px-3 py-2.5">
+      <div className="mb-1.5 text-[13px] font-semibold text-mute">IMEI / Serial · {imeis.length} เครื่อง</div>
+      <ul className="flex flex-wrap gap-1.5">
+        {imeis.map((u) => {
+          const hit = needle && u.imei.toLowerCase().includes(needle);
+          const ownPrice = condition === 'used' && u.wholesale !== null;
+          return (
+            <li
+              key={u.imei}
+              title={[u.name, u.note].filter(Boolean).join(' · ')}
+              className={['num inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[13px]', hit ? 'border-gold-deep bg-gold font-semibold text-ink' : 'border-seam bg-wash'].join(' ')}
+            >
+              <span className="tracking-wide">{u.imei}</span>
+              {ownPrice && <span className="text-mute">ส่ง {num(u.wholesale)}</span>}
+              {u.note && <span className="text-gold-deep">•</span>}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function SourceRows({ lines, rowsByLine }) {
   if (!rowsByLine) {
     return (
@@ -209,7 +308,7 @@ function SourceRows({ lines, rowsByLine }) {
   );
 }
 
-function DetailTable({ detail, fresh, importId }) {
+function DetailTable({ detail, fresh, importId, q }) {
   const [sort, setSort] = useState({ key: 'default' });
   const [open, setOpen] = useState(() => new Set());
   const [rowsByLine, setRowsByLine] = useState(null);
@@ -219,14 +318,28 @@ function DetailTable({ detail, fresh, importId }) {
     setRowsByLine(null);
   }, [importId]);
 
+  const loadRows = useCallback(async () => {
+    if (rowsByLine) return;
+    const rows = await api.rows(importId);
+    setRowsByLine(new Map(rows.map((r) => [r.line, r])));
+  }, [rowsByLine, importId]);
+
+  // a search that matches an IMEI opens that line so the unit shows
+  useEffect(() => {
+    const needle = (q || '').trim().toLowerCase();
+    if (needle.length < 4) return;
+    const keys = detail.filter((d) => d.imeis?.some((u) => u.imei.toLowerCase().includes(needle))).map((d) => d.key);
+    if (keys.length && keys.length <= 5) {
+      setOpen(new Set(keys));
+      loadRows();
+    }
+  }, [q, detail, loadRows]);
+
   const toggle = async (key) => {
     const next = new Set(open);
     next.has(key) ? next.delete(key) : next.add(key);
     setOpen(next);
-    if (!rowsByLine) {
-      const rows = await api.rows(importId);
-      setRowsByLine(new Map(rows.map((r) => [r.line, r])));
-    }
+    loadRows();
   };
 
   const sorted = useMemo(() => {
@@ -248,7 +361,7 @@ function DetailTable({ detail, fresh, importId }) {
       {sorted.map((d, i) => {
         const key = d.key;
         return (
-          <li key={key} className={['flex items-start justify-between gap-3 px-4 py-3', fresh && i < 24 ? 'printing card-print' : ''].join(' ')}>
+          <li key={key} className={['flex flex-wrap items-start justify-between gap-3 px-4 py-3', fresh && i < 24 ? 'printing card-print' : ''].join(' ')}>
             <div className="min-w-0">
               <div className="text-[13px] font-semibold text-cover-deep">{d.brand}</div>
               <div className="font-semibold">{d.model}</div>
@@ -264,6 +377,19 @@ function DetailTable({ detail, fresh, importId }) {
               <div className="text-sm">{num(d.retail)}</div>
               <div className="text-[13px] text-mute">{d.wholesale === null ? NO_WHOLESALE : `ส่ง ${num(d.wholesale)}`}</div>
             </div>
+            {d.imeis?.length > 0 && (
+              <details className="basis-full text-[13px]">
+                <summary className="cursor-pointer font-semibold text-cover-deep">IMEI {d.imeis.length} เครื่อง</summary>
+                <ul className="num mt-1 grid gap-0.5 text-mute">
+                  {d.imeis.map((u) => (
+                    <li key={u.imei}>
+                      {u.imei}
+                      {d.condition === 'used' && u.wholesale !== null && ` · ส่ง ${num(u.wholesale)}`}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </li>
         );
       })}
@@ -316,7 +442,20 @@ function DetailTable({ detail, fresh, importId }) {
                     {showBrand ? d.brand : <span className="sr-only">{d.brand}</span>}
                   </td>
                   <td className="px-2 py-2 text-[13px] text-mute" style={{ '--col': 2 }}>{d.sku || <span className="text-faint">—</span>}</td>
-                  <td className="min-w-40 px-3 py-2 !whitespace-normal" style={{ '--col': 3 }}>{d.model}</td>
+                  <td className="min-w-40 px-3 py-2 !whitespace-normal" style={{ '--col': 3 }}>
+                    {d.model}
+                    {d.imeis?.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => toggle(key)}
+                        title={d.imeis.map((u) => u.imei).join('\n')}
+                        className="block max-w-[230px] truncate text-left text-[12px] tracking-wide text-mute hover:text-cover-deep"
+                      >
+                        <span className="font-semibold text-cover-deep">IMEI</span> {d.imeis[0].imei}
+                        {d.imeis.length > 1 && <span className="font-semibold"> +{d.imeis.length - 1}</span>}
+                      </button>
+                    )}
+                  </td>
                   <td className="max-w-32 px-3 py-2 !whitespace-normal" style={{ '--col': 4 }}>{d.capacity || <span className="text-faint">—</span>}</td>
                   <td className="px-3 py-2" style={{ '--col': 5 }}>
                     <span className={['rounded px-2 py-px text-[13px] font-semibold whitespace-nowrap', d.condition === 'used' ? 'bg-cover text-cover-ink' : 'bg-wash text-ink'].join(' ')}>
@@ -334,6 +473,7 @@ function DetailTable({ detail, fresh, importId }) {
                     <td />
                     <td colSpan={10} className="px-2 pt-1 pb-3">
                       <div className="rounded-lg border border-seam bg-white">
+                        <ImeiList imeis={d.imeis} q={q} condition={d.condition} />
                         <SourceRows lines={d.lines} rowsByLine={rowsByLine} />
                       </div>
                     </td>
@@ -446,7 +586,7 @@ function PrintReport({ data }) {
           </tr>
         </tbody>
       </table>
-      <PrintTable items={detail} totalLabel="รวมเครื่อง" totalQty={totals.deviceQty} />
+      {(detail.length > 0 || accessories.length === 0) && <PrintTable items={detail} totalLabel="รวมเครื่อง" totalQty={totals.deviceQty} />}
       {accessories.length > 0 && (
         <>
           <h2 style={{ fontFamily: 'var(--font-stamp)', fontSize: 15, fontWeight: 700, color: '#005A9C', margin: '16px 0 6px', breakAfter: 'avoid' }}>{ACCESSORY_TITLE}</h2>
@@ -454,8 +594,51 @@ function PrintReport({ data }) {
         </>
       )}
       <p style={{ marginTop: 8, color: '#574d50' }}>หมายเหตุ: รวมจำนวนตามรหัสสินค้าและสี จากรายงานสต๊อกต้นฉบับ ราคาที่แสดงคือราคาของเครื่องส่วนใหญ่ในกลุ่ม</p>
+      <PrintImeis items={[...detail, ...accessories]} title={title} />
     </div>,
     document.body,
+  );
+}
+
+/** Same list as the Excel sheet "รายการ IMEI", on its own pages. */
+function PrintImeis({ items, title }) {
+  const units = items.flatMap((d) =>
+    (d.imeis || []).map((u) => ({
+      d,
+      name: u.name || [d.brand, d.model, d.capacity, d.color].filter(Boolean).join(' '),
+      imei: u.imei,
+      retail: u.retail ?? d.retail,
+      wholesale: u.wholesale ?? (d.condition === 'new' ? d.wholesale : null),
+      note: u.note,
+    })),
+  );
+  if (!units.length) return null;
+  const H = ['#', 'รุ่นสินค้า', 'IMEI / Serial', 'รหัสสินค้า', 'ประเภท', 'ราคาขายปลีก', 'ราคาขายส่ง', 'หมายเหตุ'];
+  const cell = (i) => ({ padding: '3px 6px', textAlign: i === 0 || i >= 5 && i <= 6 ? 'right' : 'left', border: '1px solid #DCE3E3', fontVariantNumeric: 'tabular-nums' });
+  return (
+    <section style={{ breakBefore: 'page' }}>
+      <h1 style={{ fontFamily: 'var(--font-stamp)', fontSize: 18, fontWeight: 700, color: '#005A9C', margin: '0 0 8px' }}>
+        {title} · รายการ IMEI ({num(units.length)} เครื่อง)
+      </h1>
+      <table>
+        <thead>
+          <tr>
+            {H.map((h, i) => (
+              <th key={h} style={{ padding: '5px 6px', textAlign: cell(i).textAlign, border: '1px solid #C9D3D3' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {units.map((u, i) => (
+            <tr key={`${u.d.key}|${u.imei}`} className={u.d.condition === 'used' ? 'used' : ''}>
+              {[i + 1, u.name, u.imei, u.d.sku, COND[u.d.condition], num(u.retail), u.wholesale === null ? NO_WHOLESALE : num(u.wholesale), u.note].map((v, c) => (
+                <td key={c} style={cell(c)}>{v}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   );
 }
 
@@ -560,17 +743,20 @@ export default function StockPage() {
   const [dragging, setDragging] = useState(false);
   const [showSkipped, setShowSkipped] = useState(false);
   const fileInput = useRef();
+  // bumped after every upload: an IMEI list lands on the import already open, so neither
+  // the import id nor the filters change, yet its data must be fetched again
+  const [uploadCount, setUploadCount] = useState(0);
 
   const onUploaded = useCallback((imp) => {
     setSelectedId(imp.id);
     setFreshId(imp.id);
+    setUploadCount((n) => n + 1);
     setCondition('all');
     setBrand('all');
     setQ('');
   }, []);
-  const { upload, busy, error } = useUpload(onUploaded);
-
   const currentId = selectedId ?? imports?.[0]?.id ?? null;
+  const { upload, busy, error } = useUpload(onUploaded, currentId);
   const filters = useMemo(() => ({ condition, brand, q: q.trim() }), [condition, brand, q]);
 
   useEffect(() => {
@@ -593,7 +779,7 @@ export default function StockPage() {
       live = false;
       clearTimeout(t);
     };
-  }, [currentId, filters]);
+  }, [currentId, filters, uploadCount]);
 
   useEffect(() => {
     if (!freshId) return;
@@ -619,7 +805,7 @@ export default function StockPage() {
     onDrop: (e) => {
       e.preventDefault();
       setDragging(false);
-      upload(e.dataTransfer.files[0]);
+      upload(e.dataTransfer.files);
     },
   };
 
@@ -646,12 +832,12 @@ export default function StockPage() {
           className="fixed inset-0 z-40 grid place-items-center bg-cover-deep/90 p-6 backdrop-blur-[2px]"
           onDragLeave={(e) => e.currentTarget === e.target && setDragging(false)}
           onDragOver={(e) => e.preventDefault()}
-          onDrop={pageDrop.onDrop}
+          /* no onDrop here: the drop bubbles to the page, which handles it once (a handler here too uploaded every file twice) */
         >
           <div className="pointer-events-none flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-gold px-12 py-10 text-center text-white">
             <FileUp size={40} className="text-gold" />
             <p className="font-stamp text-2xl font-bold">วางไฟล์เพื่อนำเข้า</p>
-            <p className="text-cover-mute">.xlsx .xls .csv .pdf</p>
+            <p className="text-cover-mute">รายงานสต๊อก หรือไฟล์ราคาขายปลีก-ส่งที่มีเลข IMEI · .xlsx .xls .csv .pdf</p>
           </div>
         </div>
       )}
@@ -660,13 +846,13 @@ export default function StockPage() {
         title="สต๊อกสินค้า"
         stamp={imp ? thaiShort(imp.created_at.slice(0, 10)) : thaiShort(todayISO())}
         stampKey={imp?.id}
-        sub={imp ? `${imp.filename} · อ่าน ${num(imp.rows)} บรรทัด` : 'กำลังโหลด…'}
+        sub={imp ? `${imp.filename} · อ่าน ${num(imp.rows)} บรรทัด${imp.imei_count ? ` · IMEI ${num(imp.imei_count)} เครื่อง` : ''}` : 'กำลังโหลด…'}
       >
         <button type="button" className="btn btn-outline" disabled={busy} onClick={() => fileInput.current.click()}>
           {busy ? <LoaderCircle size={18} className="animate-spin" /> : <Upload size={18} />}
           {busy ? 'กำลังอ่านไฟล์…' : 'นำเข้าไฟล์'}
         </button>
-        <input ref={fileInput} type="file" accept={ACCEPT} className="sr-only" tabIndex={-1} onChange={(e) => (upload(e.target.files[0]), (e.target.value = ''))} />
+        <input ref={fileInput} type="file" accept={ACCEPT} multiple className="sr-only" tabIndex={-1} onChange={(e) => (upload([...e.target.files]), (e.target.value = ''))} />
         <div className="flex items-center gap-2" role="group" aria-label="ส่งออก">
           <a className={['btn btn-primary', !data ? 'pointer-events-none opacity-50' : ''].join(' ')} href={data ? api.exportUrl(currentId, 'xlsx', filters) : undefined} download>
             <FileSpreadsheet size={18} />
@@ -734,6 +920,8 @@ export default function StockPage() {
         </ul>
       )}
 
+      {imp && <ImeiBar imp={imp} check={data?.imeiCheck} busy={busy} onAdd={() => fileInput.current.click()} />}
+
       <div className="grid gap-6 3xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="leaf min-w-0 overflow-hidden" aria-label="ตารางสต๊อก" aria-busy={loading}>
           <div className="flex flex-wrap items-center gap-3 border-b border-seam-soft px-4 py-3">
@@ -770,7 +958,7 @@ export default function StockPage() {
               </select>
             </label>
             <div className="w-full sm:ml-auto sm:w-auto">
-              <SearchBox value={q} onChange={setQ} placeholder="ค้นหารุ่น สี รหัส" icon={Search} />
+              <SearchBox value={q} onChange={setQ} placeholder="ค้นหารุ่น สี รหัส IMEI" icon={Search} />
             </div>
           </div>
 
@@ -796,14 +984,14 @@ export default function StockPage() {
                 <>
                   {data.detail.length > 0 && (
                     <>
-                      <DetailTable detail={data.detail} fresh={freshId === currentId} importId={currentId} />
+                      <DetailTable detail={data.detail} fresh={freshId === currentId} importId={currentId} q={filters.q} />
                       <TotalBar label={`รวมเครื่อง ${num(data.totals.deviceLines)} รายการ`} qty={data.totals.deviceQty} />
                     </>
                   )}
                   {data.accessories.length > 0 && (
                     <>
                       <h3 className="border-t border-seam px-4 pt-5 pb-3 font-stamp text-[17px] font-bold text-cover-deep">{ACCESSORY_TITLE}</h3>
-                      <DetailTable detail={data.accessories} fresh={freshId === currentId} importId={currentId} />
+                      <DetailTable detail={data.accessories} fresh={freshId === currentId} importId={currentId} q={filters.q} />
                       <TotalBar label={`รวมสายชาร์จ/อะแดปเตอร์ ${num(data.totals.accessoryLines)} รายการ`} qty={data.totals.accessoryQty} unit="ชิ้น" />
                     </>
                   )}

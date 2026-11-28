@@ -18,16 +18,45 @@ function label(text) {
 const anyOf = (labels, flags = 'i') => new RegExp(`(?:${labels.map(label).join('|')})`, flags);
 
 const pad = (n) => String(n).padStart(2, '0');
-export function toISODate(s) {
-  const m = String(s ?? '').match(/(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})/);
-  if (!m) return '';
-  let y = Number(m[3]);
+
+function isoOf(d, mo, yRaw) {
+  let y = Number(yRaw);
   if (y < 100) y += y > 50 ? 2500 : 2000;
   if (y > 2400) y -= 543;
-  const d = Number(m[1]);
-  const mo = Number(m[2]);
   if (mo < 1 || mo > 12 || d < 1 || d > 31) return '';
   return `${y}-${pad(mo)}-${pad(d)}`;
+}
+
+// Thai receipts often spell the month: "26 พ.ย. 2569", "26 พฤศจิกายน 2569", "26 Nov 2026"
+const MONTHS = [
+  ['ม.ค.', 'มกราคม', 'jan'], ['ก.พ.', 'กุมภาพันธ์', 'feb'], ['มี.ค.', 'มีนาคม', 'mar'], ['เม.ย.', 'เมษายน', 'apr'],
+  ['พ.ค.', 'พฤษภาคม', 'may'], ['มิ.ย.', 'มิถุนายน', 'jun'], ['ก.ค.', 'กรกฎาคม', 'jul'], ['ส.ค.', 'สิงหาคม', 'aug'],
+  ['ก.ย.', 'กันยายน', 'sep'], ['ต.ค.', 'ตุลาคม', 'oct'], ['พ.ย.', 'พฤศจิกายน', 'nov'], ['ธ.ค.', 'ธันวาคม', 'dec'],
+];
+const bare = (s) => s.replace(/[็-๎\s.]/g, '').toLowerCase(); // survives damaged tone marks
+const MONTH_RE = /(\d{1,2})\s*([ก-๙a-z.]+?)\.?\s*,?\s*(\d{4}|\d{2})(?!\d)/gi;
+
+function monthOf(word) {
+  const w = bare(word);
+  if (!w) return 0;
+  const i = MONTHS.findIndex(([abbr, full, en]) => w === bare(abbr) || w === bare(full) || w.startsWith(en));
+  return i + 1;
+}
+
+export function toISODate(s) {
+  const text = String(s ?? '');
+  const m = text.match(/(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})/);
+  if (m) return isoOf(Number(m[1]), Number(m[2]), m[3]);
+  for (const w of text.matchAll(MONTH_RE)) {
+    const mo = monthOf(w[2]);
+    if (mo) return isoOf(Number(w[1]), mo, w[3]);
+  }
+  // month first: "Nov 26, 2026"
+  for (const w of text.matchAll(/\b([a-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})\b/gi)) {
+    const mo = monthOf(w[1]);
+    if (mo) return isoOf(Number(w[2]), mo, w[3]);
+  }
+  return '';
 }
 
 const MONEY = /^-?\(?[\d,]*\d(?:\.\d+)?\)?$/;
@@ -84,8 +113,22 @@ function findDate(lines) {
   const all = lines.map(text).join('\n');
   const labelled = all.match(/(?:^|\s)(?:วันที่|Date)\s*:?\s*(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4})(?:\s+(\d{1,2}[:.]\d{2}))?/im);
   if (labelled) return { date: toISODate(labelled[1]), time: labelled[2]?.replace('.', ':') || findTime(all) };
+  // a labelled date with the month spelled out, then any date at all
+  for (const l of lines) {
+    const t = text(l);
+    const at = t.search(/(?:^|\s)(?:วันที่|Date)(?=\s|:|$)/i);
+    if (at >= 0 && !/due|po\.?\s*date|ครบกำหนด|ใบสั่ง/i.test(t.slice(Math.max(0, at - 12), at + 12))) {
+      const d = toISODate(t.slice(at));
+      if (d) return { date: d, time: findTime(all) };
+    }
+  }
   const any = all.match(/\b(\d{1,2}[/.-]\d{1,2}[/.-]\d{4})\b/);
-  return { date: any ? toISODate(any[1]) : '', time: findTime(all) };
+  if (any) return { date: toISODate(any[1]), time: findTime(all) };
+  for (const l of lines) {
+    const d = toISODate(text(l));
+    if (d) return { date: d, time: findTime(all) };
+  }
+  return { date: '', time: findTime(all) };
 }
 function findTime(all) {
   const m = all.match(/(?:เวลา|Time)\s*:?\s*(\d{1,2}:\d{2})/i) || all.match(/\b(\d{1,2}:\d{2})(?::\d{2})?\b/);
@@ -205,7 +248,7 @@ function readItems(lines, start, end) {
         if (r.x >= firstNum - 10 && (money(s) !== null || s === '-')) {
           const k = nearestNum(r);
           const key = k === 'disc' ? 'discount' : k;
-          if (it[key] === null) it[key] = money(s) ?? 0;
+          if (it[key] === null) it[key] = key === 'discount' ? Math.abs(money(s) ?? 0) : money(s) ?? 0; // "-80.00" and "(80.00)" are both a discount of 80
           continue;
         }
         if (cols.unit && Math.abs(r.x + r.w / 2 - cols.unit.mid) < 22 && r.x >= firstNum - 10) continue; // unit word
@@ -245,7 +288,7 @@ export function readReceipt(lines) {
     if (n === null) continue;
     if (L.net.test(t)) net ??= n;
     else if (L.sub.test(t)) sub ??= n;
-    else if (L.discount.test(t) && !isHeader(l)) discount ??= n;
+    else if (L.discount.test(t) && !isHeader(l)) discount ??= Math.abs(n); // printed as -500.00 or (500.00) on some receipts
   }
 
   const itemsSum = items.reduce((s, i) => s + (i.amount || 0), 0);

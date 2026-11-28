@@ -28,14 +28,116 @@ function mainPrice(weights) {
   return best ? best[0] : null;
 }
 
-export function filterRows(rows, { condition, brand, q } = {}) {
+const norm = (s) => String(s ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+/** Every colour each product code comes in, longest first ("glacier blue" before "blue"). */
+export function colorsBySku(rows) {
+  const m = new Map();
+  for (const r of rows) {
+    const c = norm(titleColor(r.color));
+    if (!c) continue;
+    const k = r.sku.toUpperCase();
+    (m.get(k) || m.set(k, new Set()).get(k)).add(c);
+  }
+  return new Map([...m].map(([k, set]) => [k, [...set].sort((a, b) => b.length - a.length)]));
+}
+
+/** The colour an IMEI-list model line ends with ("… 128GB Glacier Blue"), among that code's colours. */
+function unitColor(unit, colors) {
+  const n = norm(unit.name);
+  return colors.find((c) => n === c || n.endsWith(` ${c}`)) ?? null;
+}
+
+/**
+ * `imeis`: the import's IMEI rows, so a search for an IMEI finds its product.
+ * Only the colour line that holds the matching unit is kept, not every colour of that code.
+ */
+export function filterRows(rows, { condition, brand, q } = {}, imeis = []) {
   const needle = (q || '').trim().toLowerCase();
+  const hits = new Map();
+  if (needle) {
+    for (const u of imeis) {
+      if (!u.imei.toLowerCase().includes(needle)) continue;
+      const k = u.sku.toUpperCase();
+      (hits.get(k) || hits.set(k, []).get(k)).push(u);
+    }
+  }
+  const colors = hits.size ? colorsBySku(rows) : new Map();
+  const imeiHit = (r) => {
+    const units = hits.get(r.sku.toUpperCase());
+    if (!units) return false;
+    const list = colors.get(r.sku.toUpperCase()) || [];
+    if (list.length <= 1) return true;
+    return units.some((u) => {
+      const c = unitColor(u, list);
+      return c === null || c === norm(titleColor(r.color));
+    });
+  };
   return rows.filter(
     (r) =>
       (!condition || condition === 'all' || r.condition === condition) &&
       (!brand || brand === 'all' || r.brand === brand) &&
-      (!needle || `${r.brand} ${r.model} ${r.capacity} ${r.color} ${r.sku}`.toLowerCase().includes(needle)),
+      (!needle || `${r.brand} ${r.model} ${r.capacity} ${r.color} ${r.sku}`.toLowerCase().includes(needle) || imeiHit(r)),
   );
+}
+
+/**
+ * Gives each summary line its units from the IMEI list, matched by product code.
+ * One code can hold several colours; then the colour in the IMEI list's model line decides.
+ * Also reports codes whose unit count differs between the two files.
+ */
+/**
+ * `colors`: colours per code from ALL stock rows (colorsBySku). Pass it when `summary` is
+ * filtered, so a hidden colour's units do not slide onto the colour that is still shown.
+ */
+export function attachImeis(summary, imeis, colors) {
+  const bySku = new Map();
+  for (const u of imeis) {
+    const k = u.sku.toUpperCase();
+    (bySku.get(k) || bySku.set(k, []).get(k)).push(u);
+  }
+  const items = [...summary.detail, ...summary.accessories];
+  if (!colors) {
+    colors = new Map();
+    for (const d of items) {
+      const k = d.sku.toUpperCase();
+      const c = norm(d.color);
+      if (!c) continue;
+      const list = colors.get(k) || [];
+      if (!list.includes(c)) list.push(c);
+      colors.set(k, list.sort((a, b) => b.length - a.length));
+    }
+  }
+  // units whose model line names none of the code's colours go to the code's first line
+  const firstLine = new Map();
+  for (const d of items) if (!firstLine.has(d.sku.toUpperCase())) firstLine.set(d.sku.toUpperCase(), d);
+  for (const d of items) {
+    const k = d.sku.toUpperCase();
+    const units = bySku.get(k) || [];
+    const list = colors.get(k) || [];
+    const mine = list.length <= 1
+      ? units
+      : units.filter((u) => {
+          const c = unitColor(u, list);
+          return c === null ? firstLine.get(k) === d : c === norm(d.color);
+        });
+    d.imeis = mine.map((u) => ({
+      imei: u.imei,
+      name: u.name,
+      retail: u.retail,
+      wholesale: u.wholesale,
+      note: u.note,
+    }));
+  }
+  const check = { units: imeis.length, matched: 0, diff: [], missing: [], extra: [] };
+  const stockSkus = new Set(items.map((d) => d.sku.toUpperCase()));
+  for (const d of items) {
+    check.matched += d.imeis.length;
+    if (!d.imeis.length) check.missing.push({ sku: d.sku, model: d.model, color: d.color, qty: d.qty });
+    else if (d.imeis.length !== d.qty) check.diff.push({ sku: d.sku, model: d.model, color: d.color, qty: d.qty, imeis: d.imeis.length });
+  }
+  for (const [sku, units] of bySku) if (!stockSkus.has(sku)) check.extra.push({ sku: units[0].sku, name: units[0].name, imeis: units.length });
+  return check;
 }
 
 /** สายชาร์จ/อะแดปเตอร์ and similar go to their own table after the devices. */

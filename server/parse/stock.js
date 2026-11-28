@@ -33,7 +33,8 @@ export function parseNumber(v) {
 
 export function conditionOf(stockType) {
   const s = norm(stockType);
-  if (/มือสอง|มือ2|used|second/.test(s)) return 'used';
+  // the shop's own price list groups "มือสอง/Refurbished" together; the IMEI reader does the same
+  if (/มือสอง|มือ2|used|second|refurb|รีเฟอร์|รีเฟิร์บ/.test(s)) return 'used';
   return 'new';
 }
 

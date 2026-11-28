@@ -1,14 +1,17 @@
 import express from 'express';
 import multer from 'multer';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { db } from './db.js';
 import { fileToGrid, fileKind } from './parse/grid.js';
 import { parseStockGrid } from './parse/stock.js';
-import { summarize, filterRows } from './summary.js';
-import { toCsv, toXlsx, reportTitle } from './export.js';
+import { isImeiGrid, parseImeiGrid } from './parse/imei.js';
+import { summarize, filterRows, attachImeis, colorsBySku } from './summary.js';
+import { toCsv, toXlsx, reportTitle, importDate } from './export.js';
 import { salesRoutes } from './sales.js';
+import { trackingRoutes } from './tracking.js';
+import { isDate } from './util.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -34,7 +37,7 @@ function cardIn(body, partial = false) {
   if (!partial || 'detail' in body) out.detail = String(body.detail ?? '').slice(0, 5000);
   if (!partial || 'work_date' in body) {
     const d = String(body.work_date ?? '');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) throw new Error('วันที่ไม่ถูกต้อง');
+    if (!isDate(d)) throw new Error('วันที่ไม่ถูกต้อง');
     out.work_date = d;
   }
   if (!partial || 'status' in body) {
@@ -109,7 +112,54 @@ function importWithTotals(id) {
        FROM stock_rows WHERE import_id = ?`,
     )
     .get(id);
-  return { ...importOut(i), ...t };
+  const imei_count = db.prepare('SELECT COUNT(*) AS n FROM stock_imeis WHERE import_id = ?').get(id).n;
+  return { ...importOut(i), ...t, imei_count };
+}
+
+const loadImeis = (id) => db.prepare('SELECT * FROM stock_imeis WHERE import_id = ? ORDER BY line').all(id);
+
+function saveStock(filename, kind, parsed) {
+  const insertImport = db.prepare('INSERT INTO imports (filename, file_type, title, branches, line_count, skipped) VALUES (?,?,?,?,?,?)');
+  const insertRow = db.prepare(
+    `INSERT INTO stock_rows (import_id, line, brand, model, capacity, category, condition, sku, color, supplier, qty, cost, retail, wholesale)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+  );
+  db.exec('BEGIN');
+  try {
+    const id = Number(insertImport.run(filename, kind, parsed.title, parsed.branches, parsed.lineCount, JSON.stringify(parsed.skipped)).lastInsertRowid);
+    for (const r of parsed.rows) {
+      insertRow.run(id, r.line, r.brand, r.model, r.capacity, r.category, r.condition, r.sku, r.color, r.supplier, r.qty, r.cost, r.retail, r.wholesale);
+    }
+    db.exec('COMMIT');
+    return id;
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
+}
+
+/** Replaces the IMEI list of a stock import. */
+function saveImeis(importId, filename, units) {
+  const ins = db.prepare('INSERT INTO stock_imeis (import_id, line, sku, name, condition, branch, imei, retail, wholesale, note) VALUES (?,?,?,?,?,?,?,?,?,?)');
+  db.exec('BEGIN');
+  try {
+    db.prepare('DELETE FROM stock_imeis WHERE import_id = ?').run(importId);
+    for (const u of units) ins.run(importId, u.line, u.sku, u.name, u.condition, u.branch, u.imei, u.retail, u.wholesale, u.note);
+    db.prepare('UPDATE imports SET imei_file = ? WHERE id = ?').run(filename, importId);
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
+}
+
+/** The whole import with IMEIs attached, plus how well the two files agree. */
+function fullSummary(id) {
+  const rows = loadRows(id);
+  const imeis = loadImeis(id);
+  const whole = summarize(rows);
+  const check = imeis.length ? attachImeis(whole, imeis) : null;
+  return { rows, imeis, whole, check };
 }
 
 app.get('/api/imports', (req, res) => {
@@ -117,37 +167,51 @@ app.get('/api/imports', (req, res) => {
   res.json(ids.map((r) => importWithTotals(r.id)));
 });
 
-app.post('/api/imports', upload.single('file'), async (req, res) => {
-  if (!req.file) return fail(res, 400, 'ไม่ได้เลือกไฟล์');
-  // multer gives latin1-decoded names; restore UTF-8 so Thai file names survive
-  const filename = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
-  if (!fileKind(filename)) return fail(res, 400, 'รองรับเฉพาะไฟล์ .xlsx .xls .csv และ .pdf');
+/**
+ * One or more files: stock reports become imports; an IMEI list ("รายงานสินค้าราคาขายปลีกและขายส่ง")
+ * is attached to the stock report sent with it, else to `importId`, else to the newest import.
+ */
+app.post('/api/imports', upload.any(), async (req, res) => {
+  const files = req.files || [];
+  if (!files.length) return fail(res, 400, 'ไม่ได้เลือกไฟล์');
   try {
-    const { kind, grid } = await fileToGrid(filename, req.file.buffer);
-    const parsed = parseStockGrid(grid);
-    const insertImport = db.prepare(
-      'INSERT INTO imports (filename, file_type, title, branches, line_count, skipped) VALUES (?,?,?,?,?,?)',
-    );
-    const insertRow = db.prepare(
-      `INSERT INTO stock_rows (import_id, line, brand, model, capacity, category, condition, sku, color, supplier, qty, cost, retail, wholesale)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    );
-    db.exec('BEGIN');
-    let id;
-    try {
-      id = Number(
-        insertImport.run(filename, kind, parsed.title, parsed.branches, parsed.lineCount, JSON.stringify(parsed.skipped))
-          .lastInsertRowid,
-      );
-      for (const r of parsed.rows) {
-        insertRow.run(id, r.line, r.brand, r.model, r.capacity, r.category, r.condition, r.sku, r.color, r.supplier, r.qty, r.cost, r.retail, r.wholesale);
-      }
-      db.exec('COMMIT');
-    } catch (e) {
-      db.exec('ROLLBACK');
-      throw e;
+    // Read and check every file first; save only when all of them are good, so a bad
+    // second file does not leave the first one half-imported behind an error message.
+    const stock = [];
+    const imeiFiles = [];
+    for (const f of files) {
+      // multer gives latin1-decoded names; restore UTF-8 so Thai file names survive
+      const filename = Buffer.from(f.originalname, 'latin1').toString('utf8');
+      if (!fileKind(filename)) throw new Error(`${filename}: รองรับเฉพาะไฟล์ .xlsx .xls .csv และ .pdf`);
+      const { kind, grid } = await fileToGrid(filename, f.buffer);
+      const named = (fn) => {
+        try {
+          return fn();
+        } catch (e) {
+          throw new Error(files.length > 1 ? `${filename}: ${e.message}` : e.message);
+        }
+      };
+      if (isImeiGrid(grid)) imeiFiles.push({ filename, units: named(() => parseImeiGrid(grid).units) });
+      else stock.push({ filename, kind, parsed: named(() => parseStockGrid(grid)) });
     }
-    res.status(201).json(importWithTotals(id));
+    let target = null;
+    if (imeiFiles.length && !stock.length) {
+      const asked = Number(req.body?.importId);
+      target = (asked && db.prepare('SELECT id FROM imports WHERE id = ?').get(asked)?.id) || db.prepare('SELECT id FROM imports ORDER BY id DESC LIMIT 1').get()?.id;
+      if (!target) throw new Error('ไฟล์นี้เป็นรายการ IMEI ต้องนำเข้ารายงานสต็อกสินค้า (รวมตามรหัสสินค้า) ก่อน หรือเลือกทั้งสองไฟล์พร้อมกัน');
+    }
+    let id = null;
+    for (const s of stock) id = saveStock(s.filename, s.kind, s.parsed);
+    if (imeiFiles.length) {
+      const f = imeiFiles.at(-1);
+      id = id ?? target;
+      saveImeis(id, f.filename, f.units);
+    }
+    const out = importWithTotals(id);
+    out.imeiAttached = imeiFiles.length > 0;
+    out.stockAdded = stock.length > 0;
+    if (out.imei_count) out.imeiCheck = fullSummary(id).check;
+    res.status(201).json(out);
   } catch (e) {
     fail(res, 422, e.message || 'อ่านไฟล์ไม่สำเร็จ');
   }
@@ -167,10 +231,10 @@ app.get('/api/imports/:id/summary', (req, res) => {
   const id = Number(req.params.id);
   const imp = importWithTotals(id);
   if (!imp) return fail(res, 404, 'ไม่พบการนำเข้านี้');
-  const all = loadRows(id);
-  const rows = filterRows(all, req.query);
-  const whole = summarize(all);
-  res.json({ import: imp, title: reportTitle(), all: whole.totals, brandsAll: whole.brands, ...summarize(rows) });
+  const { rows: all, imeis, whole, check } = fullSummary(id);
+  const part = summarize(filterRows(all, req.query, imeis));
+  if (imeis.length) attachImeis(part, imeis, colorsBySku(all));
+  res.json({ import: imp, title: reportTitle(importDate(imp.created_at), imp.branches), all: whole.totals, brandsAll: whole.brands, imeiCheck: check, ...part });
 });
 
 app.get('/api/imports/:id/rows', (req, res) => {
@@ -181,19 +245,24 @@ app.get('/api/imports/:id/rows', (req, res) => {
 
 app.get('/api/imports/:id/export.:fmt', async (req, res) => {
   const id = Number(req.params.id);
-  if (!importWithTotals(id)) return fail(res, 404, 'ไม่พบการนำเข้านี้');
-  const summary = summarize(filterRows(loadRows(id), req.query));
-  const name = `${reportTitle().replace(/\//g, '.')}`;
+  const imp = importWithTotals(id);
+  if (!imp) return fail(res, 404, 'ไม่พบการนำเข้านี้');
+  const rows = loadRows(id);
+  const imeis = loadImeis(id);
+  const summary = summarize(filterRows(rows, req.query, imeis));
+  if (imeis.length) attachImeis(summary, imeis, colorsBySku(rows));
+  const date = importDate(imp.created_at);
+  const name = reportTitle(date, imp.branches).replace(/\//g, '.');
   const disp = (ext) => `attachment; filename="stock.${ext}"; filename*=UTF-8''${encodeURIComponent(`${name}.${ext}`)}`;
   if (req.params.fmt === 'csv') {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', disp('csv'));
-    return res.send(toCsv(summary));
+    return res.send(toCsv(summary, date, imp.branches));
   }
   if (req.params.fmt === 'xlsx') {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', disp('xlsx'));
-    return res.send(await toXlsx(summary));
+    return res.send(await toXlsx(summary, date, imp.branches));
   }
   fail(res, 400, 'รูปแบบไฟล์ไม่รองรับ');
 });
@@ -201,19 +270,50 @@ app.get('/api/imports/:id/export.:fmt', async (req, res) => {
 // ---------------------------------------------------------------- สรุปยอดรายวัน
 salesRoutes(app, upload);
 
+// ---------------------------------------------------------------- ติดตามสินค้า (J&T)
+trackingRoutes(app, upload);
+
 // ---------------------------------------------------------------- client
 const dist = join(root, 'dist');
+
+/** Changes whenever the page is rebuilt; an open tab compares it to know it is out of date. */
+app.get('/api/version', (req, res) => {
+  const index = join(dist, 'index.html');
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ build: existsSync(index) ? String(Math.round(statSync(index).mtimeMs)) : null });
+});
 if (existsSync(dist)) {
-  app.use(express.static(dist));
-  app.get(/^\/(?!api\/).*/, (req, res) => res.sendFile(join(dist, 'index.html')));
+  // index.html is always re-checked so a rebuilt page is picked up; hashed assets can be cached
+  const noCache = (res) => res.setHeader('Cache-Control', 'no-cache');
+  app.use(express.static(dist, { setHeaders: (res, path) => path.endsWith('index.html') && noCache(res) }));
+  app.get(/^\/(?!api\/).*/, (req, res) => {
+    noCache(res);
+    res.sendFile(join(dist, 'index.html'));
+  });
 }
 
 app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) return fail(res, 413, 'ไฟล์ใหญ่เกิน 25 MB');
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') return fail(res, 413, 'ไฟล์ใหญ่เกิน 25 MB');
+    if (err.code === 'LIMIT_UNEXPECTED_FILE' || err.code === 'LIMIT_FILE_COUNT') return fail(res, 400, 'เลือกไฟล์มากเกินไปในครั้งเดียว ลองแบ่งเป็นหลายรอบ');
+    return fail(res, 400, `อัพโหลดไม่สำเร็จ (${err.code})`);
+  }
+  if (err.type === 'entity.parse.failed') return fail(res, 400, 'ข้อมูลที่ส่งมาไม่ถูกต้อง');
+  if (err.type === 'entity.too.large') return fail(res, 413, 'ข้อมูลที่ส่งมาใหญ่เกินไป');
+  if (err.status && err.status < 500) return fail(res, err.status, err.message);
   console.error(err);
   fail(res, 500, 'เซิร์ฟเวอร์ผิดพลาด');
 });
 
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`yok api ready → http://localhost:${PORT}`);
+// Express 5 also calls this back when listening fails; only report success on success
+const server = app.listen(PORT, '127.0.0.1', (err) => {
+  if (!err) console.log(`yok api ready → http://localhost:${PORT}`);
+});
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    console.error(`\nพอร์ต ${PORT} ถูกโปรแกรมอื่นใช้อยู่ ปิดโปรแกรมนั้นก่อน หรือเปิดหน้าต่างสมุดงานที่ค้างอยู่แล้วปิด แล้วลองใหม่`);
+  } else {
+    console.error(e);
+  }
+  process.exit(1);
 });

@@ -56,6 +56,22 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS stock_rows_import ON stock_rows(import_id);
 
+  -- one row per unit (IMEI / serial) from "รายงานสินค้าราคาขายปลีกและขายส่ง", attached to a stock import
+  CREATE TABLE IF NOT EXISTS stock_imeis (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    import_id  INTEGER NOT NULL REFERENCES imports(id) ON DELETE CASCADE,
+    line       INTEGER NOT NULL,
+    sku        TEXT    NOT NULL DEFAULT '',
+    name       TEXT    NOT NULL DEFAULT '',   -- the model line as the report prints it
+    condition  TEXT    NOT NULL DEFAULT 'new',
+    branch     TEXT    NOT NULL DEFAULT '',
+    imei       TEXT    NOT NULL,
+    retail     REAL,
+    wholesale  REAL,
+    note       TEXT    NOT NULL DEFAULT ''
+  );
+  CREATE INDEX IF NOT EXISTS stock_imeis_import ON stock_imeis(import_id);
+
   -- สรุปยอดรายวัน: one row per sales receipt (ใบเสร็จ)
   CREATE TABLE IF NOT EXISTS sales (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,6 +116,66 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS sale_slips_sale ON sale_slips(sale_id);
 `);
+
+// ติดตามสินค้า: transfer invoices grouped by customer (branch); a shipment is one send-out
+// round to a customer, holding the invoices that went in it and its J&T tracking numbers.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS track_shipments (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_no    TEXT    NOT NULL DEFAULT '',
+    customer_name  TEXT    NOT NULL DEFAULT '',
+    note           TEXT    NOT NULL DEFAULT '',
+    created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS track_invoices (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    inv_no         TEXT    NOT NULL UNIQUE,
+    inv_date       TEXT    NOT NULL DEFAULT '',   -- YYYY-MM-DD (ค.ศ.)
+    inv_time       TEXT    NOT NULL DEFAULT '',
+    customer_no    TEXT    NOT NULL DEFAULT '',
+    customer_name  TEXT    NOT NULL DEFAULT '',
+    salesman       TEXT    NOT NULL DEFAULT '',
+    ref_no         TEXT    NOT NULL DEFAULT '',
+    issuer         TEXT    NOT NULL DEFAULT '',
+    filename       TEXT    NOT NULL DEFAULT '',
+    shipment_id    INTEGER REFERENCES track_shipments(id) ON DELETE SET NULL,  -- NULL = still waiting for a tracking number
+    created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+  CREATE INDEX IF NOT EXISTS track_invoices_shipment ON track_invoices(shipment_id);
+
+  CREATE TABLE IF NOT EXISTS track_items (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_id   INTEGER NOT NULL REFERENCES track_invoices(id) ON DELETE CASCADE,
+    line         INTEGER NOT NULL,
+    sku          TEXT    NOT NULL DEFAULT '',
+    description  TEXT    NOT NULL DEFAULT '',
+    qty          REAL    NOT NULL DEFAULT 1,
+    unit         TEXT    NOT NULL DEFAULT '',
+    imei         TEXT    NOT NULL DEFAULT ''
+  );
+  CREATE INDEX IF NOT EXISTS track_items_invoice ON track_items(invoice_id);
+
+  CREATE TABLE IF NOT EXISTS track_parcels (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    shipment_id  INTEGER NOT NULL REFERENCES track_shipments(id) ON DELETE CASCADE,
+    tracking     TEXT    NOT NULL,
+    state        TEXT    NOT NULL DEFAULT 'new',  -- new | moving | delivered | returned | problem | none
+    last_type    TEXT    NOT NULL DEFAULT '',     -- latest scan type from J&T (Thai)
+    last_desc    TEXT    NOT NULL DEFAULT '',
+    last_time    TEXT    NOT NULL DEFAULT '',
+    events       TEXT    NOT NULL DEFAULT '[]',   -- JSON, newest first
+    checked_at   TEXT    NOT NULL DEFAULT '',
+    error        TEXT    NOT NULL DEFAULT '',
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
+    UNIQUE (shipment_id, tracking)
+  );
+  CREATE INDEX IF NOT EXISTS track_parcels_tracking ON track_parcels(tracking);
+`);
+
+// columns added after the first release
+const importCols = db.prepare('PRAGMA table_info(imports)').all().map((c) => c.name);
+if (!importCols.includes('imei_file')) db.exec("ALTER TABLE imports ADD COLUMN imei_file TEXT NOT NULL DEFAULT ''");
 
 /** Uploaded receipts and slips live here (data/ is not in git). */
 export const filesDir = process.env.YOK_FILES || join(dbPath === ':memory:' ? join(root, 'data') : dirname(dbPath), 'files');

@@ -28,6 +28,12 @@ const isPdf = (f) => /\.pdf$/i.test(f.name) || f.type === 'application/pdf';
 const isImage = (f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(f.name);
 const SLIP_ACCEPT = 'image/*,.heic,.heif,.pdf';
 
+/** A typed amount: "27,180" and "฿1,000" count as numbers; empty or junk counts as 0. */
+const toNum = (v) => {
+  const n = Number(String(v ?? '').replace(/[,\s฿]/g, ''));
+  return Number.isFinite(n) ? n : 0;
+};
+
 const baht = (n) => (n === null || n === undefined ? '—' : n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const qtyText = (n) => n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
 
@@ -230,16 +236,16 @@ function SaleForm({ initial, onSubmit, onCancel, submitLabel }) {
         if (n !== i) return it;
         const next = { ...it, [k]: v };
         // keep the line amount in step while typing qty / price / discount
-        if (k !== 'amount' && k !== 'name' && next.price !== '') next.amount = Math.round(((Number(next.qty) || 1) * Number(next.price) - (Number(next.discount) || 0)) * 100) / 100;
+        if (k !== 'amount' && k !== 'name' && String(next.price).trim() !== '') next.amount = Math.round(((toNum(next.qty) || 1) * toNum(next.price) - toNum(next.discount)) * 100) / 100;
         return next;
       });
       return { ...x, items };
     });
-  const itemsSum = f.items.reduce((t, i) => t + (Number(i.amount) || 0), 0);
-  const itemDisc = f.items.reduce((t, i) => t + (Number(i.discount) || 0), 0);
-  const billDisc = Math.max(0, (Number(f.discount) || 0) - itemDisc);
+  const itemsSum = f.items.reduce((t, i) => t + toNum(i.amount), 0);
+  const itemDisc = f.items.reduce((t, i) => t + toNum(i.discount), 0);
+  const billDisc = Math.max(0, toNum(f.discount) - itemDisc);
   const expected = Math.round((itemsSum - billDisc) * 100) / 100;
-  const mismatch = f.net !== '' && itemsSum > 0 && Math.abs(expected - Number(f.net)) > 0.5;
+  const mismatch = String(f.net).trim() !== '' && itemsSum > 0 && Math.abs(expected - toNum(f.net)) > 0.5;
 
   return (
     <form
@@ -344,7 +350,7 @@ function SaleForm({ initial, onSubmit, onCancel, submitLabel }) {
 }
 
 // ------------------------------------------------------------------ one receipt, opened
-function SaleDetail({ sale, onChange, onDeleted, onView }) {
+function SaleDetail({ sale, onChange, onDeleted, onView, onMoved }) {
   const { toast } = useStore();
   const [editing, setEditing] = useState(sale.issues.length > 0 || sale.net === null);
   const [confirm, setConfirm] = useState(false);
@@ -374,7 +380,11 @@ function SaleDetail({ sale, onChange, onDeleted, onView }) {
             onSubmit={async (f) => {
               onChange(await api.updateSale(sale.id, f));
               setEditing(false);
-              toast(`บันทึก ${f.receipt_no || 'บิลนี้'} แล้ว`, 'ok');
+              if (f.sale_date !== sale.sale_date) {
+                // the bill now belongs to another day: open that day so it does not seem to vanish
+                onMoved?.(f.sale_date);
+                toast(`ย้าย ${f.receipt_no || 'บิลนี้'} ไปวันที่ ${thaiShort(f.sale_date)} แล้ว`, 'ok');
+              } else toast(`บันทึก ${f.receipt_no || 'บิลนี้'} แล้ว`, 'ok');
             }}
           />
         ) : (
@@ -527,7 +537,7 @@ function SaleDetail({ sale, onChange, onDeleted, onView }) {
 }
 
 // ------------------------------------------------------------------ a day
-function DaySection({ day, isToday, open, onToggle, fresh, onChange, onDeleted, onView, onPrint, onSlipDrop }) {
+function DaySection({ day, isToday, open, onToggle, fresh, onChange, onDeleted, onView, onPrint, onSlipDrop, onMoved }) {
   const [openRows, setOpenRows] = useState(() => new Set());
   const [over, setOver] = useState(null);
   const t = day.totals;
@@ -651,7 +661,7 @@ function DaySection({ day, isToday, open, onToggle, fresh, onChange, onDeleted, 
                       {isOpen && (
                         <tr>
                           <td colSpan={7} className="p-0">
-                            <SaleDetail sale={s} onChange={onChange} onDeleted={onDeleted} onView={onView} />
+                            <SaleDetail sale={s} onChange={onChange} onDeleted={onDeleted} onView={onView} onMoved={onMoved} />
                           </td>
                         </tr>
                       )}
@@ -685,7 +695,7 @@ function DaySection({ day, isToday, open, onToggle, fresh, onChange, onDeleted, 
                     <Flags sale={s} />
                   </div>
                 </div>
-                {openRows.has(s.id) && <SaleDetail sale={s} onChange={onChange} onDeleted={onDeleted} onView={onView} />}
+                {openRows.has(s.id) && <SaleDetail sale={s} onChange={onChange} onDeleted={onDeleted} onView={onView} onMoved={onMoved} />}
               </li>
             ))}
           </ul>
@@ -898,7 +908,7 @@ export default function SalesPage() {
           className="fixed inset-0 z-40 grid place-items-center bg-cover-deep/90 p-6 backdrop-blur-[2px]"
           onDragLeave={(e) => e.currentTarget === e.target && setDragging(false)}
           onDragOver={(e) => e.preventDefault()}
-          onDrop={pageDrop.onDrop}
+          /* no onDrop here: the drop bubbles to the page, which handles it once (a handler here too uploaded every file twice) */
         >
           <div className="pointer-events-none flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-gold px-12 py-10 text-center text-white">
             <FileUp size={40} className="text-gold" />
@@ -1000,6 +1010,11 @@ export default function SalesPage() {
               onDeleted={replace}
               onView={(slips, index) => setViewer({ slips, index })}
               onPrint={setPrintDay}
+              onMoved={(date) => {
+                const next = { ...openDays, [date]: true };
+                setOpenDays(next);
+                writeOpen(next);
+              }}
               onSlipDrop={(sale, files) => {
                 const images = files.filter((f) => isImage(f) || isPdf(f));
                 if (images.length) attachTo(sale, images);

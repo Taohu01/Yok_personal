@@ -28,9 +28,11 @@ export const api = {
   deleteCard: (id) => request(`/api/cards/${id}`, { method: 'DELETE' }),
 
   imports: () => request('/api/imports'),
-  upload: (file) => {
+  /** Stock report(s) and/or an IMEI list; an IMEI list alone attaches to `importId`. */
+  upload: (files, importId) => {
     const fd = new FormData();
-    fd.append('file', file);
+    for (const f of [].concat(files)) fd.append('files', f);
+    if (importId) fd.append('importId', String(importId));
     return request('/api/imports', { method: 'POST', body: fd });
   },
   deleteImport: (id) => request(`/api/imports/${id}`, { method: 'DELETE' }),
@@ -57,4 +59,20 @@ export const api = {
   updateSlip: (id, patch) => request(`/api/slips/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   deleteSlip: (id) => request(`/api/slips/${id}`, { method: 'DELETE' }),
   dayExportUrl: (date, fmt) => `/api/sales/day/${date}/export.${fmt}`,
+
+  // ติดตามสินค้า
+  tracking: () => request('/api/tracking'),
+  uploadTrackInvoices: (files) => {
+    const fd = new FormData();
+    for (const f of files) fd.append('files', f);
+    return request('/api/tracking/invoices', { method: 'POST', body: fd });
+  },
+  deleteTrackInvoice: (id) => request(`/api/tracking/invoices/${id}`, { method: 'DELETE' }),
+  unshipInvoice: (id) => request(`/api/tracking/invoices/${id}/unship`, { method: 'POST' }),
+  ship: (body) => request('/api/tracking/ship', { method: 'POST', body: JSON.stringify(body) }),
+  addTrackParcels: (id, trackings) => request(`/api/tracking/shipments/${id}/parcels`, { method: 'POST', body: JSON.stringify({ trackings }) }),
+  deleteTrackParcel: (id) => request(`/api/tracking/parcels/${id}`, { method: 'DELETE' }),
+  unship: (id) => request(`/api/tracking/shipments/${id}/unship`, { method: 'POST' }),
+  setParcelState: (id, state) => request(`/api/tracking/parcels/${id}`, { method: 'PATCH', body: JSON.stringify({ state }) }),
+  setShipmentState: (id, state) => request(`/api/tracking/shipments/${id}/state`, { method: 'POST', body: JSON.stringify({ state }) }),
 };
